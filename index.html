@@ -486,7 +486,7 @@ function launchUser() {
   var out = {};
   String(P.initData || '').split('&').forEach(function (kv) {
     var i = kv.indexOf('=');
-    if (i > 0 && kv.slice(0, i) === 'user') { try { out = JSON.parse(decodeURIComponent(kv.slice(i + 1))); } catch (e) {} }
+    if (i > 0 && kv.slice(0, i) === 'user') { try { out = JSON.parse(decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' '))); } catch (e) {} }
   });
   return out;
 }
