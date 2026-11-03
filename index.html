@@ -217,6 +217,42 @@ input[type=date].input,input[type=time].input{line-height:46px}
 .dialog .sheet-actions>*+*{margin-top:4px}
 .code{font-size:40px;font-weight:700;letter-spacing:.18em;text-align:center;font-variant-numeric:tabular-nums;padding:14px 0 6px}
 
+.mbtn{flex:1;display:flex;align-items:center;gap:6px;font-weight:600;font-size:16px;padding:6px 6px;border-radius:10px;min-width:0;text-align:left}
+.mbtn svg{color:var(--hint)}
+.mbtn:active{background:var(--line)}
+.cal-head{display:flex;align-items:center;gap:6px;margin:2px 0 12px}
+.cal-head .t{flex:1;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.cal-head .round{background:var(--bg2)}
+.cal-head .pill{background:var(--bg2)}
+.cal-wd{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:11px;color:var(--hint);text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-d{height:48px;border-radius:12px;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:600;font-variant-numeric:tabular-nums;font-size:16px;text-align:center}
+.cal-d .dots{display:flex;gap:3px;height:5px;margin-top:3px}
+.cal-d .dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.cal-d .dot.p{background:var(--warn)}
+.cal-d.past{color:var(--hint)}
+.cal-d.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.cal-d.sel{background:var(--accent);color:var(--accent-text)}
+.cal-d.sel .dot,.cal-d.sel .dot.p{background:var(--accent-text)}
+.cal-d.off{opacity:.3;pointer-events:none}
+.cal-d.blank{background:none;pointer-events:none}
+.rep{background:var(--bg2);border-radius:14px;padding:12px 12px 6px;margin:-4px 0 14px}
+.rep .opts button{background:var(--card)}
+.rep .opts button.on{background:var(--accent)}
+.rep .input{background:var(--card)}
+.occ-row{display:grid;grid-template-columns:24px 1fr 76px 76px;gap:6px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.occ-row:first-child{border-top:0}
+.occ-row .d{font-size:14px;font-weight:600;line-height:1.25;min-width:0}
+.occ-row .d small{display:block;font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.occ-row .d small.bad{color:var(--danger)}.occ-row .d small.warn{color:var(--warn)}.occ-row .d small.ok{color:var(--ok)}
+.occ-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.occ-row.off .d,.occ-row.off input[type=time]{opacity:.5}
+.input.sm{height:38px;font-size:15px;padding:0 4px;border-radius:10px;line-height:38px;text-align:center}
+.input.sm::-webkit-calendar-picker-indicator{display:none}
+.input.sm::-webkit-datetime-edit{padding:0}
+#f-wd{gap:5px}
+#f-wd button{width:42px;padding:0;height:36px}
+.occ-sum{font-size:13px;color:var(--hint);margin:2px 2px 6px}
 #toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;transition:opacity .2s,transform .2s;z-index:40;background:rgba(22,24,28,.94);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 28px);width:max-content;text-align:center;pointer-events:none;box-shadow:var(--shadow)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.error{background:#c93c41}
@@ -271,6 +307,8 @@ var I = {
   alert: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.01"/></svg>',
   ban: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>',
   link: '<svg class="i s" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
+  down: '<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  repeat: '<svg class="i s" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
   chat: '<svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
 };
 
@@ -389,7 +427,7 @@ function toast(msg, kind) {
   var t = $('#toast');
   t.textContent = msg; t.className = 'show' + (kind === 'error' ? ' error' : '');
   clearTimeout(toastT);
-  toastT = setTimeout(function () { t.className = ''; }, kind === 'error' ? 4200 : 2600);
+  toastT = setTimeout(function () { t.className = ''; }, Math.min(9000, (kind === 'error' ? 4200 : 2600) + Math.max(0, String(msg).length - 60) * 35));
 }
 function clampDay(iso) {
   var st = S.d.settings;
@@ -496,9 +534,9 @@ function vRegister() {
   var who = S.d && S.d.identity ? esc(S.d.identity.name) : '';
   return '<div class="wrap">' + hero(I.logo, '', 'Актовый зал', 'Чтобы смотреть расписание и бронировать зал, оставьте заявку — администратор откроет доступ.') +
     '<form class="card" id="reg" autocomplete="on">' +
-      '<div class="field"><label for="r-fio">ФИО полностью</label><input class="input" id="r-fio" name="name" autocomplete="name" placeholder="Иванова Мария Сергеевна" value="' + esc(guess) + '" required></div>' +
+      '<div class="field"><label for="r-fio">ФИО полностью</label><input class="input" id="r-fio" name="name" autocomplete="name" placeholder="Иванова Мария Сергеевна" value="' + esc(S.regFio != null ? S.regFio : guess) + '" required><div id="r-twin">' + twinBox() + '</div></div>' +
       '<div class="field"><label for="r-pos">Должность</label><input class="input" id="r-pos" placeholder="Учитель музыки" required></div>' +
-      '<div class="field"><label for="r-mail">Email <span style="opacity:.7">— необязательно</span></label><input class="input" id="r-mail" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru"></div>' +
+      '<div class="field"><label for="r-mail">Email <span style="opacity:.7">— необязательно, любая почта</span></label><input class="input" id="r-mail" type="email" inputmode="email" autocomplete="email" placeholder="name@mail.ru"></div>' +
       '<button class="btn" type="submit" id="r-go">Отправить заявку</button>' +
     '</form>' +
     (S.showCode
@@ -510,6 +548,22 @@ function vRegister() {
     '</div>';
 }
 
+function twinBox() {
+  if (!S.twin || S.forceReg) return '';
+  var other = S.twin.via;
+  return '<div class="warnbox w" style="margin-top:8px"><b>Сотрудник с таким ФИО уже зарегистрирован через ' + esc(other) + '.</b><br>' +
+    'Если это вы — не регистрируйтесь заново, а привяжите этот мессенджер кодом: в ' + esc(other) + ' откройте приложение → кружок с инициалами → «Получить код».' +
+    '<div class="actions" style="margin-top:10px"><button type="button" class="btn sm" data-a="showcode">Ввести код</button><button type="button" class="btn sm sec" data-a="nottwin">Это не я</button></div></div>';
+}
+function checkTwin() {
+  var el = $('#r-fio'); if (!el) return;
+  var fio = el.value.trim(); S.regFio = el.value;
+  if (fio.split(/\s+/).length < 2 || fio === S.twinChecked) return;
+  S.twinChecked = fio;
+  api('checkName', { fio: fio }).then(function (d) {
+    S.twin = d && d.nameCheck; var box = $('#r-twin'); if (box) box.innerHTML = twinBox();
+  }, function () {});
+}
 function vPending() {
   var m = S.d.me;
   var canAsk = P.tg && P.tg.initDataUnsafe && P.tg.initDataUnsafe.user && P.tg.initDataUnsafe.user.allows_write_to_pm === false && P.tg.requestWriteAccess;
@@ -551,7 +605,7 @@ function vSchedule() {
   var days = []; for (var i = 0; i < 7; i++) days.push(addDays(wk, i));
   var m1 = +days[0].slice(5, 7) - 1, m2 = +days[6].slice(5, 7) - 1;
   var label = m1 === m2 ? MN[m1] + ' ' + days[0].slice(0, 4) : MN[m1] + ' – ' + MN[m2].toLowerCase() + ' ' + days[6].slice(0, 4);
-  h += '<div class="weeknav"><div class="mlabel">' + label + '</div>' +
+  h += '<div class="weeknav"><button class="mbtn" data-a="cal" aria-label="Выбрать дату в календаре">' + I.cal.replace('class="i"', 'class="i s"') + '<span>' + label + '</span>' + I.down + '</button>' +
     (day !== st.today ? '<button class="pill" data-a="today">Сегодня</button>' : '') +
     '<button class="round" data-a="week" data-v="-7" aria-label="Назад">' + I.left + '</button>' +
     '<button class="round" data-a="week" data-v="7" aria-label="Вперёд">' + I.right + '</button></div>';
@@ -606,6 +660,7 @@ function bkCard(b, opts) {
   if (b.status === 'pending' && !opts.noStatus) chips.push('<span class="chip warn">Ждёт подтверждения</span>');
   if (b.status === 'cancelled') chips.push('<span class="chip mut">Отменено</span>');
   if (opts.showMine !== false && b.mine && b.status !== 'cancelled') chips.push('<span class="chip acc">Моя</span>');
+  if (b.series) chips.push('<span class="chip mut">' + I.repeat + 'Серия</span>');
   if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
   var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
   return '<button class="' + cls + '" data-a="bk" data-v="' + b.row + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
@@ -645,6 +700,7 @@ function vAdmin() {
     segBtn('bookings', 'Брони', pb.length) + segBtn('access', 'Заявки', pu.length) + segBtn('people', 'Люди', 0) + '</div>';
   if (S.admTab === 'bookings') {
     if (!pb.length) return h + '<div class="card empty"><b>Новых заявок на бронь нет</b>Когда кто-то отправит заявку, бот пришлёт уведомление.</div>';
+    serBtn.seen = {};
     return h + '<div class="list">' + grouped(pb, function (b) {
       var s = toMin(b.start), e = toMin(b.end), extra = '';
       var c = overlaps(b.date, s, e, 'confirmed', b.row), p = overlaps(b.date, s, e, 'pending', b.row);
@@ -654,7 +710,7 @@ function vAdmin() {
       if (b.comment) extra += '<div class="m">💬 ' + esc(b.comment) + '</div>';
       return '<div>' + bkCard(b, { extra: extra, showMine: false, noStatus: true }) +
         '<div class="actions" style="margin:6px 0 4px"><button class="btn sm" data-a="confirm" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>' +
-        '<button class="btn sm danger" data-a="reject" data-v="' + b.row + '">' + I.x + 'Отклонить</button></div></div>';
+        '<button class="btn sm danger" data-a="reject" data-v="' + b.row + '">' + I.x + 'Отклонить</button></div>' + serBtn(b) + '</div>';
     }) + '</div>';
   }
   if (S.admTab === 'access') {
@@ -681,6 +737,13 @@ function vAdmin() {
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
   }).join('') : '<div class="card empty">Никого не нашли</div>') + '</div>';
 }
+function serBtn(b) {
+  if (!b.series || serBtn.seen[b.series]) return '';
+  serBtn.seen[b.series] = true;
+  var n = pendingBookings().filter(function (x) { return x.series === b.series; }).length;
+  return n > 1 ? '<div class="actions" style="margin:0 0 4px"><button class="btn sm sec" data-a="confirmseries" data-v="' + esc(b.series) + '">' + I.repeat + 'Подтвердить всю серию (' + n + ')</button></div>' : '';
+}
+serBtn.seen = {};
 function segBtn(id, label, n) {
   return '<button class="' + (S.admTab === id ? 'on' : '') + '" data-a="admtab" data-v="' + id + '">' + label + (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
 }
@@ -715,7 +778,7 @@ function ask(o) {
     var bd = document.createElement('div'); bd.className = 'backdrop'; bd.style.zIndex = 30;
     var wrap = document.createElement('div'); wrap.className = 'dialog-wrap';
     wrap.innerHTML = '<div class="dialog" role="alertdialog"><h3>' + esc(o.title) + '</h3>' + (o.text ? '<p class="lead">' + o.text + '</p>' : '') +
-      (o.reason ? '<div class="field"><textarea class="input" id="ask-r" rows="2" placeholder="' + esc(o.reason) + '"></textarea></div>' : '') +
+      (o.reason ? '<div class="field"><textarea class="input" id="ask-r" rows="2" placeholder="' + esc(o.reason) + '">' + esc(o.reasonValue || '') + '</textarea></div>' : '') +
       (o.check ? '<label class="check"><input type="checkbox" id="ask-c"' + (o.check.on ? ' checked' : '') + '><span>' + o.check.label + '</span></label>' : '') +
       '<div class="sheet-actions"><button class="btn' + (o.danger ? ' danger' : '') + '" id="ask-ok">' + esc(o.ok || 'Да') + '</button>' +
       '<button class="btn ghost" id="ask-no">Отмена</button></div></div>';
@@ -738,52 +801,154 @@ function ask(o) {
   });
 }
 
+/* --- календарь месяца --- */
+var calMonth = null;
+function shortDate(iso) { return WD[wday(iso)].toLowerCase() + ' ' + +iso.slice(8) + '.' + iso.slice(5, 7); }
+function calHtml() {
+  var st = S.d.settings, ym = calMonth, y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+  var lead = (wday(ym + '-01') + 6) % 7, days = new Date(Date.UTC(y, m, 0)).getUTCDate(), counts = {};
+  bookings().forEach(function (b) {
+    if (b.status === 'cancelled' || b.date.slice(0, 7) !== ym) return;
+    var c = counts[b.date] || (counts[b.date] = { c: 0, p: 0 });
+    if (b.status === 'confirmed') c.c++; else c.p++;
+  });
+  var prevOk = ym > st.minDate.slice(0, 7), nextOk = ym < st.maxDate.slice(0, 7);
+  var h = '<div class="cal-head"><div class="t">' + MN[m - 1] + ' ' + y + '</div>' +
+    (S.day !== st.today ? '<button class="pill" data-a="calpick" data-v="' + st.today + '">Сегодня</button>' : '') +
+    '<button class="round" data-a="calnav" data-v="-1" aria-label="Предыдущий месяц"' + (prevOk ? '' : ' disabled style="opacity:.3"') + '>' + I.left + '</button>' +
+    '<button class="round" data-a="calnav" data-v="1" aria-label="Следующий месяц"' + (nextOk ? '' : ' disabled style="opacity:.3"') + '>' + I.right + '</button></div>' +
+    '<div class="cal-wd"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="cal-grid">';
+  for (var i = 0; i < lead; i++) h += '<span class="cal-d blank"></span>';
+  for (var d = 1; d <= days; d++) {
+    var iso = ym + '-' + p2(d), c = counts[iso], dots = '';
+    if (c) { for (var k = 0; k < Math.min(c.c, 3); k++) dots += '<i class="dot"></i>'; if (c.p) dots += '<i class="dot p"></i>'; }
+    var cls = 'cal-d' + (iso === S.day ? ' sel' : '') + (iso === st.today ? ' today' : '') + (iso < st.today ? ' past' : '') + (iso < st.minDate || iso > st.maxDate ? ' off' : '');
+    h += '<button class="' + cls + '" data-a="calpick" data-v="' + iso + '">' + d + '<span class="dots">' + dots + '</span></button>';
+  }
+  return h + '</div><p class="hint small" style="margin:12px 2px 0">Точки — брони: синие подтверждены, жёлтые ждут подтверждения.</p>';
+}
+function openCalendar() {
+  calMonth = S.day.slice(0, 7);
+  openSheet('<div id="cal-body">' + calHtml() + '</div>');
+}
+
 /* --- форма брони --- */
 function openForm(pre) {
   var st = S.d.settings, me = S.d.me;
+  var minDate = st.today > st.minDate ? st.today : st.minDate;
   var date = pre.date || S.day;
+  if (date < minDate) date = minDate;
   var fw = freeWindows(date);
   var s = pre.s != null ? pre.s : fw.length ? fw[0][0] : toMin(st.dayStart);
-  var e = Math.min(s + 60, pre.e != null ? pre.e : toMin(st.dayEnd));
-  var minDate = st.today > st.minDate ? st.today : st.minDate;
+  var e = pre.exact ? pre.e : Math.min(s + 60, pre.e != null ? pre.e : toMin(st.dayEnd));
   var types = st.types || [];
-  var h = '<h3>Новая бронь</h3><p class="lead">' + (me.isAdmin ? 'Ваши брони подтверждаются сразу.' : 'Заявка появится в расписании после подтверждения администратором.') + '</p>' +
+  var type = pre.type && types.indexOf(pre.type) >= 0 ? pre.type : (types[0] || '');
+  var until0 = addDays(date, 27) > st.maxDate ? st.maxDate : addDays(date, 27);
+  var h = '<h3>' + (pre.repeat ? 'Повторить мероприятие' : 'Новая бронь') + '</h3><p class="lead">' + (me.isAdmin ? 'Ваши брони подтверждаются сразу.' : 'Заявка появится в расписании после подтверждения администратором.') + '</p>' +
     '<form id="bf">' +
-    '<div class="field"><label for="f-date">Дата</label><input class="input" type="date" id="f-date" min="' + minDate + '" max="' + st.maxDate + '" value="' + date + '"></div>' +
+    '<div class="field"><label for="f-date">' + (pre.repeat ? 'Первая дата' : 'Дата') + '</label><input class="input" type="date" id="f-date" min="' + minDate + '" max="' + st.maxDate + '" value="' + date + '"></div>' +
     '<div class="two"><div class="field" style="margin-bottom:0"><label for="f-s">Начало</label><input class="input" type="time" id="f-s" step="300" min="' + st.dayStart + '" max="' + st.dayEnd + '" value="' + fmt(s) + '"></div>' +
     '<div class="field" style="margin-bottom:0"><label for="f-e">Окончание</label><input class="input" type="time" id="f-e" step="300" min="' + st.dayStart + '" max="' + st.dayEnd + '" value="' + fmt(e) + '"></div></div>' +
     '<div class="dur"><button type="button" data-d="30">30 мин</button><button type="button" data-d="60">1 ч</button><button type="button" data-d="90">1,5 ч</button><button type="button" data-d="120">2 ч</button><button type="button" data-d="180">3 ч</button></div>' +
     '<div class="card" style="background:var(--bg2);padding:12px 12px 8px;margin:14px 0" id="f-track"></div>' +
     '<div id="f-status"></div>' +
-    '<div class="field"><label for="f-t">Мероприятие</label><input class="input" id="f-t" maxlength="150" placeholder="Например, репетиция хора 5А"></div>' +
-    '<div class="field"><label>Тип</label><div class="opts" id="f-type">' + types.map(function (t, i) { return '<button type="button" class="' + (i === 0 ? 'on' : '') + '" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div></div>' +
-    '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(me.short) + '"></div>' +
-    '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…"></textarea></div>' +
+    '<label class="check" style="margin:0 2px 14px"><input type="checkbox" id="f-rep"' + (pre.repeat ? ' checked' : '') + '><span><b>Повторять каждую неделю</b><br><span class="hint small">Например, репетиции по вторникам и четвергам до конца месяца. Время можно поменять для любой даты.</span></span></label>' +
+    '<div class="rep" id="f-repbox"' + (pre.repeat ? '' : ' hidden') + '>' +
+      '<div class="field"><label>Дни недели</label><div class="opts" id="f-wd">' + [1, 2, 3, 4, 5, 6, 0].map(function (w) { return '<button type="button" data-v="' + w + '">' + WD[w] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="field"><label for="f-until">Повторять до (включительно)</label><input class="input" type="date" id="f-until" min="' + minDate + '" max="' + st.maxDate + '" value="' + until0 + '"></div>' +
+      '<div class="occ-sum" id="f-occsum"></div><div id="f-occ"></div>' +
+    '</div>' +
+    '<div class="field"><label for="f-t">Мероприятие</label><input class="input" id="f-t" maxlength="150" placeholder="Например, репетиция хора 5А" value="' + esc(pre.title || '') + '"></div>' +
+    '<div class="field"><label>Тип</label><div class="opts" id="f-type">' + types.map(function (t) { return '<button type="button" class="' + (t === type ? 'on' : '') + '" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div></div>' +
+    '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
+    '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
     '<button class="btn" type="submit" id="f-go">' + (me.isAdmin ? 'Забронировать' : 'Отправить заявку') + '</button></form>';
   openSheet(h, function (sh) {
     var q = function (id) { return $('#' + id, sh); };
-    var type = types[0] || '';
-    var blocked = false;
+    var blocked = false, wdSel = {}, custom = {}, occ = [], truncated = false;
+    var repOn = function () { return q('f-rep').checked; };
+    wdSel[wday(date)] = true;
+    var paintWd = function () { q('f-wd').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', !!wdSel[b.dataset.v]); }); };
+    var slotStatus = function (d, s, e) {
+      if (s == null || e == null) return { cls: 'bad', text: 'укажите время', bad: true };
+      if (s < toMin(st.dayStart) || e > toMin(st.dayEnd)) return { cls: 'bad', text: 'только ' + st.dayStart + '–' + st.dayEnd, bad: true };
+      if (e <= s) return { cls: 'bad', text: 'конец раньше начала', bad: true };
+      if (d === st.today && s < toMin(st.now)) return { cls: 'bad', text: 'время уже прошло', bad: true };
+      var c = overlaps(d, s, e, 'confirmed');
+      if (c.length) return { cls: 'bad', text: 'занято ' + c[0].start + '–' + c[0].end + ' «' + c[0].title + '»', bad: true, clash: c };
+      var p = overlaps(d, s, e, 'pending');
+      if (p.length) return { cls: 'warn', text: 'есть заявка ' + p[0].start + '–' + p[0].end, bad: false, pend: p };
+      return { cls: 'ok', text: 'свободно', bad: false };
+    };
+    var genOcc = function () {
+      var d0 = q('f-date').value, until = q('f-until').value, gs = toMin(q('f-s').value), ge = toMin(q('f-e').value), list = [];
+      truncated = false;
+      if (d0 && until && until >= d0) {
+        for (var cur = d0, guard = 0; cur <= until && guard < 400; cur = addDays(cur, 1), guard++) {
+          if (!wdSel[wday(cur)] || cur < minDate || cur > st.maxDate) continue;
+          if (list.length >= 60) { truncated = true; break; }
+          list.push(cur);
+        }
+      }
+      occ = list.map(function (iso) {
+        var c = custom[iso] || {};
+        return { date: iso, s: c.s != null ? c.s : gs, e: c.e != null ? c.e : ge, on: c.on };
+      });
+    };
+    var renderOcc = function () {
+      var box = q('f-occ'), sum = q('f-occsum'), n = 0, nb = 0;
+      genOcc();
+      if (!Object.keys(wdSel).some(function (k) { return wdSel[k]; })) { box.innerHTML = ''; sum.textContent = 'Выберите хотя бы один день недели'; }
+      else if (!occ.length) { box.innerHTML = ''; sum.textContent = 'В этом промежутке нет выбранных дней недели'; }
+      else {
+        box.innerHTML = occ.map(function (o, i) {
+          var r = slotStatus(o.date, o.s, o.e), on = r.bad ? false : (o.on == null ? true : o.on);
+          o.eff = on;
+          if (on) n++; else if (r.bad) nb++;
+          return '<div class="occ-row' + (on ? '' : ' off') + '"><input type="checkbox" data-oi="' + i + '" aria-label="Включить дату"' + (on ? ' checked' : '') + (r.bad ? ' disabled' : '') + '>' +
+            '<div class="d">' + esc(shortDate(o.date)) + '<small class="' + r.cls + '">' + esc(r.text) + '</small></div>' +
+            '<input class="input sm" type="time" step="300" data-ot="s" data-oi="' + i + '" value="' + (o.s != null ? fmt(o.s) : '') + '" aria-label="Начало">' +
+            '<input class="input sm" type="time" step="300" data-ot="e" data-oi="' + i + '" value="' + (o.e != null ? fmt(o.e) : '') + '" aria-label="Окончание"></div>';
+        }).join('');
+        sum.innerHTML = 'Дат в серии: <b>' + n + '</b>' + (nb ? ' · ещё ' + nb + ' заняты — поменяйте им время' : '') + (truncated ? ' · не больше 60 за раз' : '');
+      }
+      q('f-go').textContent = (me.isAdmin ? 'Забронировать' : 'Отправить заявки') + (n ? ' (' + n + ')' : '');
+      q('f-go').disabled = !n;
+    };
     var check = function () {
       var d = q('f-date').value, s = toMin(q('f-s').value), e = toMin(q('f-e').value), msg = '', cls = 'mut';
       blocked = false;
       if (!d) msg = 'Выберите дату';
       else if (d < minDate || d > st.maxDate) { msg = 'Дата вне учебного года или уже прошла'; cls = 'bad'; blocked = true; }
-      else if (s == null || e == null) msg = 'Укажите время';
-      else if (s < toMin(st.dayStart) || e > toMin(st.dayEnd)) { msg = 'Зал бронируется с ' + st.dayStart + ' до ' + st.dayEnd; cls = 'bad'; blocked = true; }
-      else if (e <= s) { msg = 'Окончание должно быть позже начала'; cls = 'bad'; blocked = true; }
-      else if (d === st.today && s < toMin(st.now)) { msg = 'Это время уже прошло'; cls = 'bad'; blocked = true; }
       else {
-        var c = overlaps(d, s, e, 'confirmed'), p = overlaps(d, s, e, 'pending');
-        if (c.length) { cls = 'bad'; blocked = true; msg = 'Занято: ' + c.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; '); }
-        else if (p.length) { cls = 'warn'; msg = 'На это время уже есть заявка (ждёт подтверждения): ' + p.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; '); }
+        var r = slotStatus(d, s, e);
+        if (r.bad) { cls = 'bad'; blocked = true; msg = r.clash ? 'Занято: ' + r.clash.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; ') : cap(r.text); }
+        else if (r.pend) { cls = 'warn'; msg = 'На это время уже есть заявка (ждёт подтверждения): ' + r.pend.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; '); }
         else { cls = 'ok'; msg = 'Время свободно · ' + humanFull(d) + ', ' + fmt(s) + '–' + fmt(e); }
       }
+      if (repOn()) { cls = cls === 'bad' ? 'warn' : cls; msg = 'Первая дата: ' + msg.charAt(0).toLowerCase() + msg.slice(1); }
       q('f-status').innerHTML = '<div class="status-line ' + cls + '">' + (cls === 'ok' ? I.check : cls === 'mut' ? '' : I.alert.replace('class="i"', 'class="i s"')) + '<span>' + msg + '</span></div>';
       q('f-track').innerHTML = d && d >= st.minDate && d <= st.maxDate ? track(d, { s: s, e: e, bad: cls === 'bad' }) : '<div class="hint small">—</div>';
-      q('f-go').disabled = blocked;
+      if (repOn()) { blocked = false; renderOcc(); }
+      else { q('f-go').textContent = me.isAdmin ? 'Забронировать' : 'Отправить заявку'; q('f-go').disabled = blocked; }
     };
-    ['f-date', 'f-s', 'f-e'].forEach(function (id) { q(id).addEventListener('input', check); q(id).addEventListener('change', check); });
+    ['f-date', 'f-s', 'f-e', 'f-until'].forEach(function (id) { q(id).addEventListener('input', check); q(id).addEventListener('change', check); });
+    q('f-rep').addEventListener('change', function () {
+      q('f-repbox').hidden = !repOn();
+      if (repOn() && !Object.keys(wdSel).some(function (k) { return wdSel[k]; })) wdSel[wday(q('f-date').value || date)] = true;
+      paintWd(); check(); haptic();
+    });
+    q('f-wd').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      wdSel[b.dataset.v] = !wdSel[b.dataset.v]; paintWd(); renderOcc(); haptic();
+    });
+    q('f-occ').addEventListener('change', function (ev) {
+      var t = ev.target, o = occ[+t.dataset.oi]; if (!o) return;
+      var c = custom[o.date] || (custom[o.date] = {});
+      if (t.type === 'checkbox') c.on = t.checked;
+      else { c[t.dataset.ot] = toMin(t.value); c.on = true; }
+      renderOcc();
+    });
     sh.querySelectorAll('.dur button').forEach(function (b) {
       b.addEventListener('click', function () {
         var s = toMin(q('f-s').value); if (s == null) return;
@@ -798,18 +963,27 @@ function openForm(pre) {
     q('bf').addEventListener('submit', function (ev) {
       ev.preventDefault();
       check();
-      if (blocked) { haptic('error'); return; }
       var title = q('f-t').value.trim();
       if (!title) { q('f-t').focus(); toast('Укажите название мероприятия', 'error'); return; }
-      var data = { date: q('f-date').value, start: q('f-s').value, end: q('f-e').value, title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim() };
+      var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim() };
+      var action = 'createBooking', data, first;
+      if (repOn()) {
+        var items = occ.filter(function (o) { return o.eff; }).map(function (o) { return { date: o.date, start: fmt(o.s), end: fmt(o.e) }; });
+        if (!items.length) { haptic('error'); toast('Нет дат для брони', 'error'); return; }
+        action = 'createBookings'; data = Object.assign({ items: items }, base); first = items[0].date;
+      } else {
+        if (blocked) { haptic('error'); return; }
+        data = Object.assign({ date: q('f-date').value, start: q('f-s').value, end: q('f-e').value }, base); first = data.date;
+      }
       q('f-go').disabled = true;
-      act('createBooking', data, function (e) {
+      act(action, data, function (e) {
         if (e.code === 'CONFLICT') { q('f-status').innerHTML = '<div class="status-line bad">' + esc(e.message) + '</div>'; return true; }
       }).then(function (d) {
-        if (d) { S.day = data.date; S.tab = 'schedule'; closeAll(); render(); window.scrollTo(0, 0); }
+        if (d) { S.day = first; S.tab = 'schedule'; closeAll(); render(); window.scrollTo(0, 0); }
         else q('f-go').disabled = false;
       });
     });
+    paintWd();
     check();
   });
 }
@@ -818,20 +992,33 @@ function openForm(pre) {
 function openBooking(row) {
   var b = findBooking(row); if (!b) return;
   var me = S.d.me, st = S.d.settings, future = b.date >= st.today;
+  var ser = b.series ? bookings().filter(function (x) { return x.series === b.series && x.status !== 'cancelled' && x.date >= st.today; }) : [];
+  var serPending = ser.filter(function (x) { return x.status === 'pending'; });
   var stChip = b.status === 'confirmed' ? '<span class="chip ok">Подтверждено</span>' : b.status === 'pending' ? '<span class="chip warn">Ждёт подтверждения</span>' : '<span class="chip mut">Отменено</span>';
-  var h = '<h3>' + esc(b.title) + '</h3><div class="chips" style="margin:6px 0 16px">' + stChip + (b.mine ? '<span class="chip acc">Моя</span>' : '') + (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
+  var h = '<h3>' + esc(b.title) + '</h3><div class="chips" style="margin:6px 0 16px">' + stChip + (b.mine ? '<span class="chip acc">Моя</span>' : '') +
+    (b.series ? '<span class="chip mut">' + I.repeat + 'Серия</span>' : '') + (!future && b.status !== 'cancelled' ? '<span class="chip mut">Прошла</span>' : '') +
+    (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
-    (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') + '</dl>';
+    (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
+    (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
   if (me.isAdmin && b.status === 'pending' && future) {
     btns.push('<button class="btn" data-a="confirm" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>');
+    if (serPending.length > 1) btns.push('<button class="btn sec" data-a="confirmseries" data-v="' + esc(b.series) + '">Подтвердить всю серию (' + serPending.length + ')</button>');
     btns.push('<button class="btn danger" data-a="reject" data-v="' + b.row + '">Отклонить</button>');
-  } else if (b.mine && b.status !== 'cancelled' && future) {
-    btns.push('<button class="btn danger" data-a="cancel" data-v="' + b.row + '">' + (b.status === 'pending' ? 'Отозвать заявку' : 'Отменить бронь') + '</button>');
   } else if (me.isAdmin && b.status === 'confirmed' && future) {
     btns.push('<button class="btn danger" data-a="reject" data-v="' + b.row + '">Отменить бронь</button>');
+  } else if (b.mine && b.status !== 'cancelled' && future) {
+    btns.push('<button class="btn danger" data-a="cancel" data-v="' + b.row + '">' + (b.status === 'pending' ? 'Отозвать заявку' : 'Отменить бронь') + '</button>');
   }
+  if (b.series && ser.length > 1 && future && b.status !== 'cancelled' && (me.isAdmin || b.mine)) {
+    btns.push('<button class="btn danger" data-a="cancelseries" data-v="' + esc(b.series) + '">Отменить всю серию (' + ser.length + ')</button>');
+  }
+  if (me.isAdmin && b.status !== 'cancelled' && !future) {
+    btns.push('<button class="btn danger" data-a="notheld" data-v="' + b.row + '">Отменить — не состоялась</button>');
+  }
+  if (b.mine || me.isAdmin) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
   if (btns.length) h += '<div class="sheet-actions mt2">' + btns.join('') + '</div>';
   openSheet(h);
 }
@@ -882,7 +1069,8 @@ var A = {
   retry: function () { S.screen = 'loading'; render(); load(true); },
   reload: function () { load(); },
   close: function () { try { P.tg.close(); } catch (e) {} },
-  showcode: function () { S.showCode = true; render(true); var c = $('#l-code'); if (c) c.focus(); },
+  showcode: function () { var f = $('#r-fio'); if (f) S.regFio = f.value; S.showCode = true; render(true); var c = $('#l-code'); if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); } },
+  nottwin: function () { S.forceReg = true; var box = $('#r-twin'); if (box) box.innerHTML = ''; },
   allowpm: function () { try { P.tg.requestWriteAccess(function (ok) { if (ok) toast('Готово — бот сможет написать вам'); render(true); }); } catch (e) {} },
   tab: function (el) { S.tab = el.dataset.v; haptic(); render(); window.scrollTo(0, 0); },
   mytab: function (el) { S.myTab = el.dataset.v; haptic(); render(true); },
@@ -891,6 +1079,41 @@ var A = {
   week: function (el) { S.day = clampDay(addDays(S.day, +el.dataset.v)); haptic(); render(true); },
   today: function () { S.day = clampDay(S.d.settings.today); render(true); },
   profile: openProfile,
+  cal: openCalendar,
+  calnav: function (el) {
+    var y = +calMonth.slice(0, 4), m = +calMonth.slice(5, 7) + +el.dataset.v;
+    if (m < 1) { m = 12; y--; } else if (m > 12) { m = 1; y++; }
+    calMonth = y + '-' + p2(m);
+    var box = $('#cal-body'); if (box) box.innerHTML = calHtml();
+    haptic();
+  },
+  calpick: function (el) { S.day = clampDay(el.dataset.v); closeAll(); haptic(); render(); window.scrollTo(0, 0); },
+  repeat: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    var st = S.d.settings, minD = st.today > st.minDate ? st.today : st.minDate, next = addDays(b.date, 7);
+    while (next < minD) next = addDays(next, 7);
+    closeAll();
+    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, repeat: true });
+  },
+  confirmseries: function (el) {
+    var sid = el.dataset.v, t = S.d.settings.today;
+    var items = bookings().filter(function (x) { return x.series === sid && x.status === 'pending' && x.date >= t; }).sort(byStart);
+    if (!items.length) return;
+    ask({ title: 'Подтвердить всю серию?', text: esc('«' + items[0].title + '» — ' + items.length + ' дат: ' + items.slice(0, 10).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ') + (items.length > 10 ? '…' : '')) + '. Даты, которые пересекаются с подтверждёнными бронями, останутся неподтверждёнными.', ok: 'Подтвердить (' + items.length + ')' })
+      .then(function (r) { if (r) act('confirmSeries', { series: sid }).then(function (d) { if (d) closeAll(); }); });
+  },
+  cancelseries: function (el) {
+    var sid = el.dataset.v, me = S.d.me, t = S.d.settings.today;
+    var items = bookings().filter(function (x) { return x.series === sid && x.status !== 'cancelled' && x.date >= t && (me.isAdmin || x.mine); });
+    if (!items.length) return;
+    ask({ title: 'Отменить всю серию?', text: esc('«' + items[0].title + '» — будущих дат: ' + items.length + '. Прошедшие останутся как есть.'), reason: me.isAdmin && !items[0].mine ? 'Причина (необязательно) — её увидит автор' : null, ok: 'Отменить (' + items.length + ')', danger: true })
+      .then(function (r) { if (r) act('cancelSeries', { series: sid, reason: r.reason }).then(function (d) { if (d) closeAll(); }); });
+  },
+  notheld: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    ask({ title: 'Отметить, что не состоялась?', text: esc(humanFull(b.date) + ', ' + b.start + '–' + b.end + ' «' + b.title + '»') + '. Бронь получит статус «Отменено» и перестанет учитываться в часах. Автору уведомление не придёт.', reason: 'Комментарий', reasonValue: 'Не состоялось', ok: 'Отменить бронь', danger: true })
+      .then(function (r) { if (r) act('rejectBooking', { row: b.row, sig: b.sig, reason: r.reason }).then(function (d) { if (d) closeAll(); }); });
+  },
   new: function (el) {
     var pre = { date: S.day };
     if (el.dataset.s) { pre.s = +el.dataset.s; pre.e = +el.dataset.e; }
@@ -952,7 +1175,9 @@ document.addEventListener('click', function (ev) {
   ev.preventDefault();
   A[el.dataset.a](el);
 });
+document.addEventListener('focusout', function (ev) { if (ev.target.id === 'r-fio') checkTwin(); });
 document.addEventListener('input', function (ev) {
+  if (ev.target.id === 'r-fio') { S.regFio = ev.target.value; clearTimeout(S.twinT); S.twinT = setTimeout(checkTwin, 900); }
   if (ev.target.id === 'q') {
     S.q = ev.target.value;
     var pos = ev.target.selectionStart;
@@ -967,7 +1192,9 @@ document.addEventListener('submit', function (ev) {
     if (fio.split(/\s+/).length < 2) { toast('Укажите фамилию, имя и отчество', 'error'); $('#r-fio').focus(); return; }
     if (!pos) { toast('Укажите должность', 'error'); $('#r-pos').focus(); return; }
     var go = $('#r-go'); if (go) go.disabled = true;
-    act('register', { fio: fio, position: pos, email: mail }).then(function (d) {
+    act('register', { fio: fio, position: pos, email: mail, force: !!S.forceReg }, function (e) {
+      if (e.code === 'NAME_TWIN') { S.twin = { via: /Telegram/.test(e.message) ? 'Telegram' : 'MAX' }; var box = $('#r-twin'); if (box) { box.innerHTML = twinBox(); box.scrollIntoView({ block: 'center' }); } return true; }
+    }).then(function (d) {
       if (!d) { var g = $('#r-go'); if (g) g.disabled = false; return; }
       if (d && d.me && d.me.status !== 'Одобрен' && P.tg && P.tg.requestWriteAccess && P.tg.initDataUnsafe && P.tg.initDataUnsafe.user && P.tg.initDataUnsafe.user.allows_write_to_pm === false) {
         try { P.tg.requestWriteAccess(); } catch (e) {}
