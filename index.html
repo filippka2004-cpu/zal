@@ -720,6 +720,8 @@ function tabBtn(id, icon, label, badge) {
 /* --- расписание --- */
 function vSchedule() {
   var st = S.d.settings, day = S.day, wk = monday(day), h = festBanner();
+  if (S.d.me.onlyNeeded) h += '<div class="card" style="margin:2px 0 10px;padding:12px 14px"><b>🎛 Ваши мероприятия</b><div class="hint small" style="margin-top:4px">Здесь только подтверждённые мероприятия, где нужен ' +
+    esc(S.d.me.onlyNeeded.join(', ').toLowerCase()) + '. О новых придёт сообщение в бот.</div></div>';
   calMonth = day.slice(0, 7);
   h += '<div class="sched"><aside class="side"><div id="cal-side">' + calHtml() + '</div></aside><section>';
   var days = []; for (var i = 0; i < 7; i++) days.push(addDays(wk, i));
@@ -749,7 +751,7 @@ function vSchedule() {
   }
   h += '</div>';
   h += '<div class="list mt">' + (list.length ? list.map(function (b) { return bkCard(b); }).join('') :
-    '<div class="empty"><b>Броней нет</b>' + (canBook(day) ? 'Зал свободен весь день' : '') + '</div>') + '</div>';
+    '<div class="empty"><b>' + (S.d.me.onlyNeeded ? 'В этот день вы не нужны' : 'Броней нет') + '</b>' + (canBook(day) ? 'Зал свободен весь день' : '') + '</div>') + '</div>';
   h += '<p class="swipe-hint">Листайте дни пальцем влево и вправо</p>';
   return h + '</section></div>';
 }
@@ -782,6 +784,7 @@ function bkCard(b, opts) {
   if (b.status === 'pending' && !opts.noStatus) chips.push('<span class="chip warn">Ждёт подтверждения</span>');
   if (b.status === 'cancelled') chips.push('<span class="chip mut">Отменено</span>');
   if (opts.showMine !== false && b.mine && b.status !== 'cancelled') chips.push('<span class="chip acc">Моя</span>');
+  if (b.neededAs && b.neededAs.length) chips.push('<span class="chip ok">🎛 Вы нужны: ' + esc(b.neededAs.join(', ').toLowerCase()) + '</span>');
   if (b.series) chips.push('<span class="chip mut">' + I.repeat + 'Серия</span>');
   if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
   var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
@@ -1180,6 +1183,7 @@ function openBooking(row) {
     (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
+    (b.neededAs && b.neededAs.length ? '<dt>Вы нужны</dt><dd><b>' + esc(cap(b.neededAs.join(', ').toLowerCase())) + '</b></dd>' : '') +
     (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
