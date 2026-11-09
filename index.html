@@ -1107,10 +1107,11 @@ function openForm(pre) {
       need.forEach(function (sp) {
         var bosses = (S.d.people || []).filter(function (x) { return (x.team || []).indexOf(sp) >= 0; });
         if (!bosses.length) return;
-        var ok = bosses.some(function (x) { return x.uid === me.uid || partSel.indexOf(x.uid) >= 0; });
+        var nrm = function (t) { return String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я]/g, ''); }, resp = nrm(q('f-r') && q('f-r').value);
+        var ok = bosses.some(function (x) { return x.uid === me.uid || partSel.indexOf(x.uid) >= 0 || (nrm(x.name).length > 3 && resp.indexOf(nrm(x.name)) >= 0); });
         if (!ok) { lines.push(sp.toLowerCase()); bosses.forEach(function (x) { if (add.indexOf(x.uid) < 0) add.push(x.uid); }); }
       });
-      box.innerHTML = lines.length ? '<div class="warnbox w spec-hint">Чтобы ' + esc(lines.join(', ')) + ' получил(и) сообщение, добавьте участником ' +
+      box.innerHTML = lines.length ? '<div class="warnbox w spec-hint">Чтобы ' + esc(lines.join(', ')) + ' получил(и) сообщение, укажите ответственным или добавьте участником ' +
         esc(add.map(pname).join(' или ')) + ' — специалисты в его команде.' +
         add.map(function (uid) { return '<button type="button" class="btn sm sec" data-padd="' + uid + '">Добавить ' + esc(pname(uid)) + '</button>'; }).join('') + '</div>' : '';
     };
@@ -1128,6 +1129,7 @@ function openForm(pre) {
       if (r) { partSel = partSel.filter(function (x) { return x !== r.dataset.prem; }); renderParts(); haptic(); }
     });
     if (q('f-pq')) q('f-pq').addEventListener('input', renderParts);
+    q('f-r').addEventListener('input', function () { renderSpecHint(); });
     q('f-spec').addEventListener('click', function (ev) {
       var b = ev.target.closest('button'); if (!b) return;
       specSel[b.dataset.v] = !specSel[b.dataset.v]; b.classList.toggle('on', !!specSel[b.dataset.v]); renderSpecHint(); haptic();
@@ -1198,6 +1200,9 @@ function openBooking(row) {
   }
   if (b.series && ser.length > 1 && future && b.status !== 'cancelled' && (me.isAdmin || (b.mine && mayBook()))) {
     btns.push('<button class="btn danger" data-a="cancelseries" data-v="' + esc(b.series) + '">Отменить всю серию (' + ser.length + ')</button>');
+  }
+  if (me.isAdmin && b.status === 'confirmed' && future && (b.specs || (b.participants && b.participants.length))) {
+    btns.push('<button class="btn ghost" data-a="remind" data-v="' + b.row + '">📣 Напомнить команде</button>');
   }
   if (me.isAdmin && b.status !== 'cancelled' && !future) {
     btns.push('<button class="btn danger" data-a="notheld" data-v="' + b.row + '">Отменить — не состоялась</button>');
@@ -1344,6 +1349,10 @@ var A = {
       .then(function (r) { if (r) act('cancelBooking', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); }); });
   },
   uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book' }).then(function (d) { if (d) closeAll(); }); },
+  remind: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    act('remindTeam', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); });
+  },
   uspec: function (el) {
     var specs = [].map.call(document.querySelectorAll('#u-spec button.on'), function (b) { return b.dataset.v; });
     act('setSpecialty', { uid: el.dataset.v, specs: specs }).then(function (d) { if (d) closeAll(); });
