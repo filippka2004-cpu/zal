@@ -483,7 +483,9 @@ function freeWindows(iso) {
   if (de > cur) out.push([cur, de]);
   return out.filter(function (w) { return w[1] - w[0] >= 15; });
 }
-function canBook(iso) { var st = S.d.settings; return iso >= st.today && iso >= st.minDate && iso <= st.maxDate; }
+function mayBook() { return !!(S.d && S.d.me && S.d.me.canBook !== false); }
+var LEVELS = { admin: 'Администратор', book: 'Просмотр и бронирование', view: 'Только просмотр' };
+function canBook(iso) { var st = S.d.settings; return mayBook() && iso >= st.today && iso >= st.minDate && iso <= st.maxDate; }
 function pendingBookings() { var t = S.d.settings.today; return bookings().filter(function (b) { return b.status === 'pending' && b.date >= t; }).sort(byStart); }
 function pendingUsers() { return ((S.d.admin && S.d.admin.users) || []).filter(function (u) { return u.status === 'Заявка'; }); }
 function findBooking(row) { return bookings().filter(function (b) { return b.row === +row; })[0]; }
@@ -725,7 +727,9 @@ function vAdmin() {
         '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(u.fio) + '</div><div class="hint small">' + esc(u.position || '—') + '</div></div></div>' +
         '<dl class="kv mt">' + (u.tg ? '<dt>Telegram</dt><dd>' + esc(u.tg) + '</dd>' : '') + (u.max ? '<dt>MAX</dt><dd>' + esc(u.max) + '</dd>' : '') +
         (u.email ? '<dt>Email</dt><dd>' + esc(u.email) + '</dd>' : '') + (u.requested ? '<dt>Заявка</dt><dd>' + esc(u.requested) + '</dd>' : '') + '</dl>' +
-        '<div class="actions"><button class="btn sm" data-a="uapprove" data-v="' + u.uid + '">' + I.check + 'Одобрить</button>' +
+        '<div class="hint small" style="margin:10px 2px 6px">Какой доступ открыть?</div>' +
+        '<div class="actions" style="margin-top:0"><button class="btn sm" data-a="uapprove" data-v="' + u.uid + '" data-l="book">' + I.check + 'Бронирование</button>' +
+        '<button class="btn sm sec" data-a="uapprove" data-v="' + u.uid + '" data-l="view">Только просмотр</button>' +
         '<button class="btn sm danger" data-a="ureject" data-v="' + u.uid + '">' + I.x + 'Отклонить</button></div></div>';
     }).join('') + '</div>';
   }
@@ -736,7 +740,7 @@ function vAdmin() {
   }).sort(function (a, b) { return rank(a) - rank(b) || a.fio.localeCompare(b.fio, 'ru'); });
   h += '<div class="field"><input class="input" id="q" type="search" placeholder="Поиск по имени, должности, email" value="' + esc(S.q) + '"></div>';
   return h + '<div class="list">' + (people.length ? people.map(function (u) {
-    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? 'Доступ открыт' : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
+    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : 'Бронирование') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
     return '<button class="person" data-a="user" data-v="' + u.uid + '"><div class="avatar">' + esc(initials(u.fio)) + '</div><div class="body">' +
       '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
@@ -839,6 +843,7 @@ function openCalendar() {
 
 /* --- форма брони --- */
 function openForm(pre) {
+  if (!mayBook()) { toast('У вас доступ только для просмотра. Чтобы бронировать зал, попросите администратора расширить права.', 'error'); return; }
   var st = S.d.settings, me = S.d.me, ed = pre.edit || null, exRow = ed ? ed.row : undefined;
   var minDate = ed && me.isAdmin ? st.minDate : st.today > st.minDate ? st.today : st.minDate;
   var date = pre.date || S.day;
@@ -1035,17 +1040,17 @@ function openBooking(row) {
     btns.push('<button class="btn danger" data-a="reject" data-v="' + b.row + '">Отклонить</button>');
   } else if (me.isAdmin && b.status === 'confirmed' && future) {
     btns.push('<button class="btn danger" data-a="reject" data-v="' + b.row + '">Отменить бронь</button>');
-  } else if (b.mine && b.status !== 'cancelled' && future) {
+  } else if (mayBook() && b.mine && b.status !== 'cancelled' && future) {
     btns.push('<button class="btn danger" data-a="cancel" data-v="' + b.row + '">' + (b.status === 'pending' ? 'Отозвать заявку' : 'Отменить бронь') + '</button>');
   }
-  if (b.series && ser.length > 1 && future && b.status !== 'cancelled' && (me.isAdmin || b.mine)) {
+  if (b.series && ser.length > 1 && future && b.status !== 'cancelled' && (me.isAdmin || (b.mine && mayBook()))) {
     btns.push('<button class="btn danger" data-a="cancelseries" data-v="' + esc(b.series) + '">Отменить всю серию (' + ser.length + ')</button>');
   }
   if (me.isAdmin && b.status !== 'cancelled' && !future) {
     btns.push('<button class="btn danger" data-a="notheld" data-v="' + b.row + '">Отменить — не состоялась</button>');
   }
-  if (b.status !== 'cancelled' && (me.isAdmin || (b.mine && future))) btns.unshift('<button class="btn sec" data-a="edit" data-v="' + b.row + '">' + I.edit + 'Изменить</button>');
-  if (b.mine || me.isAdmin) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
+  if (b.status !== 'cancelled' && (me.isAdmin || (b.mine && future && mayBook()))) btns.unshift('<button class="btn sec" data-a="edit" data-v="' + b.row + '">' + I.edit + 'Изменить</button>');
+  if (mayBook() && (b.mine || me.isAdmin)) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
   if (btns.length) h += '<div class="sheet-actions mt2">' + btns.join('') + '</div>';
   openSheet(h);
 }
@@ -1053,10 +1058,11 @@ function openBooking(row) {
 /* --- человек --- */
 function openUser(uid) {
   var u = findUser(uid); if (!u) return;
-  var st = u.role === 'Админ' ? 'Администратор' : u.status || 'Нет в приложении';
+  var st = u.status || 'Нет в приложении';
+  var lvl = u.status === 'Одобрен' ? u.level || 'book' : '';
   var h = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="avatar" style="width:48px;height:48px;font-size:16px">' + esc(initials(u.fio)) + '</div>' +
     '<div><h3 style="margin:0">' + esc(u.fio || '—') + '</h3><div class="hint small">' + esc(u.position || '') + '</div></div></div>' +
-    '<dl class="kv"><dt>Статус</dt><dd>' + esc(st) + '</dd>' +
+    '<dl class="kv"><dt>Статус</dt><dd>' + esc(st) + '</dd>' + (lvl ? '<dt>Права</dt><dd>' + esc(LEVELS[lvl]) + '</dd>' : '') +
     '<dt>Telegram</dt><dd>' + esc(u.tg || '—') + '</dd><dt>MAX</dt><dd>' + esc(u.max || '—') + '</dd>' +
     (u.email ? '<dt>Email</dt><dd>' + esc(u.email) + '</dd>' : '') + (u.gaccess ? '<dt>Google-таблица</dt><dd>' + esc(u.gaccess) + '</dd>' : '') +
     (u.requested ? '<dt>Заявка</dt><dd>' + esc(u.requested) + '</dd>' : '') + '</dl>';
@@ -1065,10 +1071,10 @@ function openUser(uid) {
     btns.push('<p class="hint small" style="margin:0 0 6px">Ещё не заходил(а) в приложение. Отправьте ссылку на бота — после регистрации заявка появится во вкладке «Заявки», с пометкой, что человек уже есть в таблице.</p>');
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить из таблицы</button>');
   } else if (!u.isMe) {
-    if (u.status !== 'Одобрен') btns.push('<button class="btn" data-a="uapprove" data-v="' + u.uid + '">Открыть доступ</button>');
-    btns.push(u.role === 'Админ'
-      ? '<button class="btn sec" data-a="urole" data-v="' + u.uid + '" data-on="0">Снять права администратора</button>'
-      : '<button class="btn sec" data-a="urole" data-v="' + u.uid + '" data-on="1">Сделать администратором</button>');
+    btns.push('<div class="field" style="margin:0 0 4px"><label>' + (lvl ? 'Изменить права' : 'Открыть доступ') + '</label><div class="opts" id="u-lvl">' +
+      ['view', 'book', 'admin'].map(function (l) {
+        return '<button type="button" class="' + (l === lvl ? 'on' : '') + '" data-a="ulevel" data-v="' + u.uid + '" data-l="' + l + '">' + LEVELS[l] + '</button>';
+      }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Администратор — подтверждает брони и управляет людьми.</div></div>');
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить пользователя</button>');
   } else {
     btns.push('<p class="hint small" style="text-align:center">Это вы. Свои права изменить нельзя.</p>');
@@ -1082,7 +1088,7 @@ function openProfile() {
   var other = P.name === 'tg' ? 'MAX' : 'Telegram';
   var hasOther = P.name === 'tg' ? m.hasMax : m.hasTg;
   var h = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="avatar" style="width:52px;height:52px;font-size:18px">' + esc(initials(m.fio)) + '</div>' +
-    '<div><h3 style="margin:0">' + esc(m.fio) + '</h3><div class="hint small">' + esc(m.position || '') + (m.isAdmin ? ' · администратор' : '') + '</div></div></div>' +
+    '<div><h3 style="margin:0">' + esc(m.fio) + '</h3><div class="hint small">' + esc(m.position || '') + (m.isAdmin ? ' · администратор' : m.level === 'view' ? ' · только просмотр' : '') + '</div></div></div>' +
     '<dl class="kv"><dt>Telegram</dt><dd>' + (m.hasTg ? 'подключён' : '—') + '</dd><dt>MAX</dt><dd>' + (m.hasMax ? 'подключён' : '—') + '</dd>' +
     (m.email ? '<dt>Email</dt><dd>' + esc(m.email) + '</dd>' : '') + '<dt>Ваш ID</dt><dd class="hint">' + esc(platformLabel() + ' ' + idn.id) + '</dd></dl>' +
     '<div class="card mt2" style="background:var(--bg2)" id="p-link"><div style="display:flex;gap:8px;align-items:center;font-weight:600">' + I.link + 'Привязать ' + other + '</div>' +
@@ -1172,7 +1178,16 @@ var A = {
     ask({ title: b.status === 'pending' ? 'Отозвать заявку?' : 'Отменить бронь?', text: esc(humanFull(b.date) + ', ' + b.start + '–' + b.end + ' «' + b.title + '»'), ok: b.status === 'pending' ? 'Отозвать' : 'Отменить бронь', danger: true })
       .then(function (r) { if (r) act('cancelBooking', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); }); });
   },
-  uapprove: function (el) { act('approveUser', { uid: el.dataset.v }).then(function (d) { if (d) closeAll(); }); },
+  uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book' }).then(function (d) { if (d) closeAll(); }); },
+  ulevel: function (el) {
+    var u = findUser(el.dataset.v), l = el.dataset.l; if (!u) return;
+    if (u.status === 'Одобрен' && (u.level || 'book') === l) return;
+    var go = function () { act('setRole', { uid: u.uid, level: l }).then(function (d) { if (d) closeAll(); }); };
+    if (l === 'admin' || u.level === 'admin') {
+      ask({ title: l === 'admin' ? 'Сделать администратором?' : 'Снять права администратора?', text: l === 'admin' ? esc(u.fio) + ' сможет подтверждать брони и управлять пользователями.' : esc(u.fio) + ': ' + LEVELS[l].toLowerCase() + '.', ok: l === 'admin' ? 'Сделать администратором' : 'Изменить права' })
+        .then(function (r) { if (r) go(); });
+    } else go();
+  },
   ureject: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
     ask({ title: 'Отклонить заявку?', text: esc(u.fio) + ' не получит доступ к расписанию.', ok: 'Отклонить', danger: true })
