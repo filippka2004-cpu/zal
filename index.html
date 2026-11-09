@@ -499,7 +499,7 @@ function clampDay(iso) {
 function apply(d) {
   S.d = d; S.last = Date.now();
   if (!S.day) S.day = clampDay(d.settings.today);
-  S.screen = !d.me ? 'register' : d.me.status === 'Одобрен' ? 'app' : d.me.status === 'Отклонён' ? 'rejected' : 'pending';
+  S.screen = !d.me ? 'register' : d.me.status === 'Отклонён' ? 'rejected' : (d.me.nameBad && !d.me.isAdmin) ? 'fixname' : d.me.status === 'Одобрен' ? 'app' : 'pending';
   if (S.tab === 'admin' && !(d.me && d.me.isAdmin)) S.tab = 'schedule';
   if (d.notice) toast(d.notice);
   render(true);
@@ -559,6 +559,7 @@ function render(keepScroll) {
   else if (S.screen === 'error') h = vError();
   else if (S.screen === 'register') h = vRegister();
   else if (S.screen === 'pending') h = vPending();
+  else if (S.screen === 'fixname') h = vFixName();
   else if (S.screen === 'rejected') h = vRejected();
   else h = vApp();
   $('#app').innerHTML = h;
@@ -630,6 +631,33 @@ function checkTwin() {
     S.twin = d && d.nameCheck; var box = $('#r-twin'); if (box) box.innerHTML = twinBox();
   }, function () {});
 }
+/* --- проверка ФИО (как на сервере) --- */
+function niceFio(v) {
+  return String(v || '').replace(/[\s\u00a0]+/g, ' ').trim().split(' ').map(function (w) {
+    return w.split('-').map(function (p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('-');
+  }).join(' ');
+}
+function fioProblem(v) {
+  var w = niceFio(v).split(' ').filter(Boolean);
+  if (w.length < 2) return 'Укажите фамилию и имя (можно с отчеством), например: Иванова Мария Сергеевна';
+  if (w.length > 4) return 'Слишком много слов — нужны только фамилия, имя и отчество';
+  for (var i = 0; i < w.length; i++) {
+    if (!/^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?$/.test(w[i])) return 'Напишите фамилию и имя русскими буквами, без цифр, ников и смайликов';
+    if (w[i].replace('-', '').length < 2) return 'Фамилия и имя должны быть полными, не инициалами';
+  }
+  var lw = w.map(function (x) { return x.toLowerCase(); });
+  if (lw.some(function (x, i) { return lw.indexOf(x) !== i; })) return 'Похоже на ник: слова повторяются. Укажите настоящие фамилию и имя';
+  return '';
+}
+function vFixName() {
+  var m = S.d.me;
+  return '<div class="wrap">' + hero(I.user || I.logo, 'warn', 'Укажите настоящее ФИО', 'Сейчас в приложении записано «' + esc(m.fio) + '». Чтобы коллеги и администратор понимали, кто бронирует зал, напишите фамилию и имя (можно с отчеством).') +
+    '<form id="fixf" class="card" autocomplete="on"><div class="field"><label for="fx-fio">Фамилия Имя Отчество</label>' +
+    '<input class="input" id="fx-fio" name="name" autocomplete="name" placeholder="Иванова Мария Сергеевна" value=""></div>' +
+    '<div id="fx-err" class="hint small" style="color:var(--danger);margin:-6px 2px 10px"></div>' +
+    '<button class="btn" type="submit">Сохранить</button></form></div>';
+}
+
 function vPending() {
   var m = S.d.me;
   var canAsk = P.tg && P.tg.initDataUnsafe && P.tg.initDataUnsafe.user && P.tg.initDataUnsafe.user.allows_write_to_pm === false && P.tg.requestWriteAccess;
@@ -861,7 +889,7 @@ function vAdmin() {
   return h + '<div class="list list-wide">' + (people.length ? people.map(function (u) {
     var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : 'Бронирование') + (u.specialty && u.specialty.length ? ' · ' + u.specialty.join(', ').toLowerCase() : '') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
     return '<button class="person" data-a="user" data-v="' + u.uid + '"><div class="avatar">' + esc(initials(u.fio)) + '</div><div class="body">' +
-      '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + (u.nameBad && (u.tg || u.max) ? ' <span class="chip warn" style="font-size:11px;padding:1px 7px;vertical-align:1px">ник</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
   }).join('') : '<div class="card empty">Никого не нашли</div>') + '</div>';
 }
@@ -1241,6 +1269,7 @@ function openUser(uid) {
         'Сообщение придёт, когда в брони отметят этого специалиста и участником выберут вас. В списке участников подчинённых не видно.</div>' +
         '<button type="button" class="btn sm sec" style="margin-top:8px" data-a="uspec" data-v="' + u.uid + '">Сохранить специализацию</button></div>');
     }
+    btns.push('<button class="btn ghost" data-a="urename" data-v="' + u.uid + '">' + I.edit + 'Изменить ФИО</button>');
     if (u.status === 'Одобрен') btns.push('<button class="btn sec" data-a="ublock" data-v="' + u.uid + '">Закрыть доступ</button>');
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить пользователя</button>');
   } else {
@@ -1353,6 +1382,16 @@ var A = {
     var b = findBooking(el.dataset.v); if (!b) return;
     act('remindTeam', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); });
   },
+  urename: function (el) {
+    var u = findUser(el.dataset.v); if (!u) return;
+    ask({ title: 'Изменить ФИО', text: 'Сейчас: ' + esc(u.fio) + '. Фамилия и имя русскими буквами, отчество — по желанию.', reason: 'Фамилия Имя Отчество', reasonValue: u.nameBad ? '' : u.fio, ok: 'Сохранить' })
+      .then(function (r) {
+        if (!r) return;
+        var v = niceFio(r.reason || ''), pr = fioProblem(v);
+        if (pr) { toast(pr, 'error'); return; }
+        act('setUserName', { uid: u.uid, fio: v }).then(function (d) { if (d) closeAll(); });
+      });
+  },
   uspec: function (el) {
     var specs = [].map.call(document.querySelectorAll('#u-spec button.on'), function (b) { return b.dataset.v; });
     act('setSpecialty', { uid: el.dataset.v, specs: specs }).then(function (d) { if (d) closeAll(); });
@@ -1419,7 +1458,12 @@ document.addEventListener('click', function (ev) {
   ev.preventDefault();
   A[el.dataset.a](el);
 });
-document.addEventListener('focusout', function (ev) { if (ev.target.id === 'r-fio') checkTwin(); });
+document.addEventListener('focusout', function (ev) {
+  if (ev.target.id === 'r-fio' || ev.target.id === 'fx-fio') {
+    var v = ev.target.value; if (v.trim()) ev.target.value = niceFio(v);
+    if (ev.target.id === 'r-fio') { S.regFio = ev.target.value; checkTwin(); }
+  }
+});
 /* листание дней пальцем */
 (function () {
   var sx = 0, sy = 0, t0 = 0, on = false;
@@ -1452,7 +1496,9 @@ document.addEventListener('submit', function (ev) {
   if (ev.target.id === 'reg') {
     ev.preventDefault();
     var fio = $('#r-fio').value.trim(), pos = $('#r-pos').value.trim(), mail = $('#r-mail').value.trim();
-    if (fio.split(/\s+/).length < 2) { toast('Укажите фамилию, имя и отчество', 'error'); $('#r-fio').focus(); return; }
+    var fp = fioProblem(fio);
+    if (fp) { toast(fp, 'error'); $('#r-fio').focus(); return; }
+    fio = niceFio(fio); $('#r-fio').value = fio;
     if (!pos) { toast('Укажите должность', 'error'); $('#r-pos').focus(); return; }
     var go = $('#r-go'); if (go) go.disabled = true;
     act('register', { fio: fio, position: pos, email: mail, force: !!S.forceReg }, function (e) {
@@ -1463,6 +1509,13 @@ document.addEventListener('submit', function (ev) {
         try { P.tg.requestWriteAccess(); } catch (e) {}
       }
     });
+  }
+  if (ev.target.id === 'fixf') {
+    ev.preventDefault();
+    var nf = $('#fx-fio').value, pr = fioProblem(nf);
+    if (pr) { $('#fx-err').textContent = pr; $('#fx-fio').focus(); return; }
+    $('#fx-fio').value = niceFio(nf);
+    act('setMyName', { fio: niceFio(nf) }, function (e) { $('#fx-err').textContent = e.message; return true; });
   }
   if (ev.target.id === 'linkf') {
     ev.preventDefault();
