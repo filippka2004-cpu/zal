@@ -163,6 +163,8 @@ input[type=date].input,input[type=time].input{line-height:46px}
 .opts{display:flex;flex-wrap:wrap;gap:6px}
 .opts button{height:36px;padding:0 13px;border-radius:999px;background:var(--bg2);font-size:14px;font-weight:500}
 .opts button.on{background:var(--accent);color:var(--accent-text)}
+.opts .sep{width:100%;height:0}
+#f-spec button.own.on{background:var(--ok);color:#fff}
 .dur{display:flex;gap:6px;margin-top:8px}
 .dur button{flex:1;height:32px;border-radius:9px;background:var(--bg2);font-size:13px;font-weight:600;color:var(--hint);text-align:center}
 .status-line{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:10px 12px;border-radius:12px;margin-bottom:14px}
@@ -308,6 +310,7 @@ var I = {
   ban: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>',
   link: '<svg class="i s" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
   down: '<svg class="i s" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  edit: '<svg class="i s" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   repeat: '<svg class="i s" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
   chat: '<svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
 };
@@ -634,11 +637,12 @@ function vSchedule() {
 }
 
 function track(iso, sel) {
+  sel = sel || {};
   var st = S.d.settings, ds = toMin(st.dayStart), de = toMin(st.dayEnd), span = de - ds;
   var pct = function (m) { return Math.max(0, Math.min(100, (m - ds) / span * 100)); };
   var h = '<div class="track">';
   dayList(iso).forEach(function (b) {
-    var s = toMin(b.start), e = toMin(b.end); if (s == null || e == null) return;
+    var s = toMin(b.start), e = toMin(b.end); if (s == null || e == null || b.row === sel.except) return;
     h += '<i class="blk' + (b.status === 'pending' ? ' p' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%"></i>';
   });
   if (sel && sel.s != null && sel.e != null && sel.e > sel.s) {
@@ -707,6 +711,7 @@ function vAdmin() {
       if (c.length) extra += '<div class="warnbox">Пересекается с подтверждённой: ' + c.map(function (x) { return esc(x.start + '–' + x.end + ' «' + x.title + '»'); }).join('; ') + '</div>';
       else if (p.length) extra += '<div class="warnbox w">Есть другая заявка на это время: ' + p.map(function (x) { return esc(x.start + '–' + x.end + ' «' + x.title + '»'); }).join('; ') + '</div>';
       if (b.requester) extra += '<div class="m">От: ' + esc(b.requester) + '</div>';
+      if (b.specs) extra += '<div class="m">🎛 ' + esc(cap(b.specs)) + '</div>';
       if (b.comment) extra += '<div class="m">💬 ' + esc(b.comment) + '</div>';
       return '<div>' + bkCard(b, { extra: extra, showMine: false, noStatus: true }) +
         '<div class="actions" style="margin:6px 0 4px"><button class="btn sm" data-a="confirm" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>' +
@@ -834,8 +839,8 @@ function openCalendar() {
 
 /* --- форма брони --- */
 function openForm(pre) {
-  var st = S.d.settings, me = S.d.me;
-  var minDate = st.today > st.minDate ? st.today : st.minDate;
+  var st = S.d.settings, me = S.d.me, ed = pre.edit || null, exRow = ed ? ed.row : undefined;
+  var minDate = ed && me.isAdmin ? st.minDate : st.today > st.minDate ? st.today : st.minDate;
   var date = pre.date || S.day;
   if (date < minDate) date = minDate;
   var fw = freeWindows(date);
@@ -843,8 +848,16 @@ function openForm(pre) {
   var e = pre.exact ? pre.e : Math.min(s + 60, pre.e != null ? pre.e : toMin(st.dayEnd));
   var types = st.types || [];
   var type = pre.type && types.indexOf(pre.type) >= 0 ? pre.type : (types[0] || '');
+  var specList = st.specialists || ['Светорежиссёр', 'Звукорежиссёр', 'Видеооператор'], ownSpec = st.ownSpecialists || 'Свои специалисты', specSel = {};
+  String(pre.specs || '').split(/\s*,\s*/).forEach(function (x) {
+    if (!x) return;
+    if (x.toLowerCase() === ownSpec.toLowerCase()) specSel[ownSpec] = true; else specSel[x] = true;
+  });
   var until0 = addDays(date, 27) > st.maxDate ? st.maxDate : addDays(date, 27);
-  var h = '<h3>' + (pre.repeat ? 'Повторить мероприятие' : 'Новая бронь') + '</h3><p class="lead">' + (me.isAdmin ? 'Ваши брони подтверждаются сразу.' : 'Заявка появится в расписании после подтверждения администратором.') + '</p>' +
+  var goText = ed ? (me.isAdmin ? 'Сохранить изменения' : 'Отправить изменения') : me.isAdmin ? 'Забронировать' : 'Отправить заявку';
+  var lead = ed ? (me.isAdmin ? 'Изменения сохранятся сразу' + (ed.mine || !ed.requester ? '.' : ', автор получит уведомление.') : 'После изменения бронь снова уйдёт на подтверждение администратору' + (ed.status === 'confirmed' ? ' — до этого она будет в статусе «Ждёт подтверждения».' : '.'))
+    : me.isAdmin ? 'Ваши брони подтверждаются сразу.' : 'Заявка появится в расписании после подтверждения администратором.';
+  var h = '<h3>' + (ed ? 'Изменить бронь' : pre.repeat ? 'Повторить мероприятие' : 'Новая бронь') + '</h3><p class="lead">' + lead + '</p>' +
     '<form id="bf">' +
     '<div class="field"><label for="f-date">' + (pre.repeat ? 'Первая дата' : 'Дата') + '</label><input class="input" type="date" id="f-date" min="' + minDate + '" max="' + st.maxDate + '" value="' + date + '"></div>' +
     '<div class="two"><div class="field" style="margin-bottom:0"><label for="f-s">Начало</label><input class="input" type="time" id="f-s" step="300" min="' + st.dayStart + '" max="' + st.dayEnd + '" value="' + fmt(s) + '"></div>' +
@@ -852,7 +865,7 @@ function openForm(pre) {
     '<div class="dur"><button type="button" data-d="30">30 мин</button><button type="button" data-d="60">1 ч</button><button type="button" data-d="90">1,5 ч</button><button type="button" data-d="120">2 ч</button><button type="button" data-d="180">3 ч</button></div>' +
     '<div class="card" style="background:var(--bg2);padding:12px 12px 8px;margin:14px 0" id="f-track"></div>' +
     '<div id="f-status"></div>' +
-    '<label class="check" style="margin:0 2px 14px"><input type="checkbox" id="f-rep"' + (pre.repeat ? ' checked' : '') + '><span><b>Повторять каждую неделю</b><br><span class="hint small">Например, репетиции по вторникам и четвергам до конца месяца. Время можно поменять для любой даты.</span></span></label>' +
+    '<label class="check" style="margin:0 2px 14px' + (ed ? ';display:none' : '') + '"><input type="checkbox" id="f-rep"' + (pre.repeat ? ' checked' : '') + '><span><b>Повторять каждую неделю</b><br><span class="hint small">Например, репетиции по вторникам и четвергам до конца месяца. Время можно поменять для любой даты.</span></span></label>' +
     '<div class="rep" id="f-repbox"' + (pre.repeat ? '' : ' hidden') + '>' +
       '<div class="field"><label>Дни недели</label><div class="opts" id="f-wd">' + [1, 2, 3, 4, 5, 6, 0].map(function (w) { return '<button type="button" data-v="' + w + '">' + WD[w] + '</button>'; }).join('') + '</div></div>' +
       '<div class="field"><label for="f-until">Повторять до (включительно)</label><input class="input" type="date" id="f-until" min="' + minDate + '" max="' + st.maxDate + '" value="' + until0 + '"></div>' +
@@ -860,9 +873,13 @@ function openForm(pre) {
     '</div>' +
     '<div class="field"><label for="f-t">Мероприятие</label><input class="input" id="f-t" maxlength="150" placeholder="Например, репетиция хора 5А" value="' + esc(pre.title || '') + '"></div>' +
     '<div class="field"><label>Тип</label><div class="opts" id="f-type">' + types.map(function (t) { return '<button type="button" class="' + (t === type ? 'on' : '') + '" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div></div>' +
+    '<div class="field"><label>Технические специалисты</label><div class="opts" id="f-spec">' +
+      specList.map(function (x) { return '<button type="button" class="' + (specSel[x] ? 'on' : '') + '" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') +
+      '<i class="sep"></i><button type="button" class="own' + (specSel[ownSpec] ? ' on' : '') + '" data-v="' + esc(ownSpec) + '">Приглашаем своих специалистов</button></div>' +
+      '<div class="hint small" style="margin:6px 2px 0">Отметьте, кто нужен от школы. Ничего не выбрано — специалисты не нужны.</div></div>' +
     '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
     '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
-    '<button class="btn" type="submit" id="f-go">' + (me.isAdmin ? 'Забронировать' : 'Отправить заявку') + '</button></form>';
+    '<button class="btn" type="submit" id="f-go">' + goText + '</button></form>';
   openSheet(h, function (sh) {
     var q = function (id) { return $('#' + id, sh); };
     var blocked = false, wdSel = {}, custom = {}, occ = [], truncated = false;
@@ -873,10 +890,10 @@ function openForm(pre) {
       if (s == null || e == null) return { cls: 'bad', text: 'укажите время', bad: true };
       if (s < toMin(st.dayStart) || e > toMin(st.dayEnd)) return { cls: 'bad', text: 'только ' + st.dayStart + '–' + st.dayEnd, bad: true };
       if (e <= s) return { cls: 'bad', text: 'конец раньше начала', bad: true };
-      if (d === st.today && s < toMin(st.now)) return { cls: 'bad', text: 'время уже прошло', bad: true };
-      var c = overlaps(d, s, e, 'confirmed');
+      if (!(ed && me.isAdmin) && d === st.today && s < toMin(st.now)) return { cls: 'bad', text: 'время уже прошло', bad: true };
+      var c = overlaps(d, s, e, 'confirmed', exRow);
       if (c.length) return { cls: 'bad', text: 'занято ' + c[0].start + '–' + c[0].end + ' «' + c[0].title + '»', bad: true, clash: c };
-      var p = overlaps(d, s, e, 'pending');
+      var p = overlaps(d, s, e, 'pending', exRow);
       if (p.length) return { cls: 'warn', text: 'есть заявка ' + p[0].start + '–' + p[0].end, bad: false, pend: p };
       return { cls: 'ok', text: 'свободно', bad: false };
     };
@@ -928,9 +945,9 @@ function openForm(pre) {
       }
       if (repOn()) { cls = cls === 'bad' ? 'warn' : cls; msg = 'Первая дата: ' + msg.charAt(0).toLowerCase() + msg.slice(1); }
       q('f-status').innerHTML = '<div class="status-line ' + cls + '">' + (cls === 'ok' ? I.check : cls === 'mut' ? '' : I.alert.replace('class="i"', 'class="i s"')) + '<span>' + msg + '</span></div>';
-      q('f-track').innerHTML = d && d >= st.minDate && d <= st.maxDate ? track(d, { s: s, e: e, bad: cls === 'bad' }) : '<div class="hint small">—</div>';
+      q('f-track').innerHTML = d && d >= st.minDate && d <= st.maxDate ? track(d, { s: s, e: e, bad: cls === 'bad', except: exRow }) : '<div class="hint small">—</div>';
       if (repOn()) { blocked = false; renderOcc(); }
-      else { q('f-go').textContent = me.isAdmin ? 'Забронировать' : 'Отправить заявку'; q('f-go').disabled = blocked; }
+      else { q('f-go').textContent = goText; q('f-go').disabled = blocked; }
     };
     ['f-date', 'f-s', 'f-e', 'f-until'].forEach(function (id) { q(id).addEventListener('input', check); q(id).addEventListener('change', check); });
     q('f-rep').addEventListener('change', function () {
@@ -955,6 +972,10 @@ function openForm(pre) {
         q('f-e').value = fmt(Math.min(s + +b.dataset.d, toMin(st.dayEnd))); check(); haptic();
       });
     });
+    q('f-spec').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      specSel[b.dataset.v] = !specSel[b.dataset.v]; b.classList.toggle('on', !!specSel[b.dataset.v]); haptic();
+    });
     q('f-type').addEventListener('click', function (ev) {
       var b = ev.target.closest('button'); if (!b) return;
       q('f-type').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
@@ -965,9 +986,14 @@ function openForm(pre) {
       check();
       var title = q('f-t').value.trim();
       if (!title) { q('f-t').focus(); toast('Укажите название мероприятия', 'error'); return; }
-      var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim() };
+      var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim(),
+        specs: Object.keys(specSel).filter(function (k) { return specSel[k]; }) };
       var action = 'createBooking', data, first;
-      if (repOn()) {
+      if (ed) {
+        if (blocked) { haptic('error'); return; }
+        action = 'editBooking';
+        data = Object.assign({ row: ed.row, sig: ed.sig, date: q('f-date').value, start: q('f-s').value, end: q('f-e').value }, base); first = data.date;
+      } else if (repOn()) {
         var items = occ.filter(function (o) { return o.eff; }).map(function (o) { return { date: o.date, start: fmt(o.s), end: fmt(o.e) }; });
         if (!items.length) { haptic('error'); toast('Нет дат для брони', 'error'); return; }
         action = 'createBookings'; data = Object.assign({ items: items }, base); first = items[0].date;
@@ -1000,7 +1026,7 @@ function openBooking(row) {
     (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
-    (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
+    (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
   if (me.isAdmin && b.status === 'pending' && future) {
@@ -1018,6 +1044,7 @@ function openBooking(row) {
   if (me.isAdmin && b.status !== 'cancelled' && !future) {
     btns.push('<button class="btn danger" data-a="notheld" data-v="' + b.row + '">Отменить — не состоялась</button>');
   }
+  if (b.status !== 'cancelled' && (me.isAdmin || (b.mine && future))) btns.unshift('<button class="btn sec" data-a="edit" data-v="' + b.row + '">' + I.edit + 'Изменить</button>');
   if (b.mine || me.isAdmin) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
   if (btns.length) h += '<div class="sheet-actions mt2">' + btns.join('') + '</div>';
   openSheet(h);
@@ -1093,7 +1120,7 @@ var A = {
     var st = S.d.settings, minD = st.today > st.minDate ? st.today : st.minDate, next = addDays(b.date, 7);
     while (next < minD) next = addDays(next, 7);
     closeAll();
-    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, repeat: true });
+    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, repeat: true });
   },
   confirmseries: function (el) {
     var sid = el.dataset.v, t = S.d.settings.today;
@@ -1120,6 +1147,11 @@ var A = {
     openForm(pre);
   },
   bk: function (el) { openBooking(el.dataset.v); },
+  edit: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    closeAll();
+    openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs });
+  },
   user: function (el) { openUser(el.dataset.v); },
   confirm: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
