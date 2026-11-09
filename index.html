@@ -165,6 +165,17 @@ input[type=date].input,input[type=time].input{line-height:46px}
 .opts button.on{background:var(--accent);color:var(--accent-text)}
 .opts .sep{width:100%;height:0}
 #f-spec button.own.on{background:var(--ok);color:#fff}
+.pp-sel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.pp-sel:empty{display:none}
+.pp-chip{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 6px 0 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:600}
+.pp-chip button{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:inherit}
+.pp-res{display:flex;flex-direction:column;margin-top:6px;border-radius:12px;overflow:hidden}
+.pp-res:empty{display:none}
+.pp-res button{display:flex;justify-content:space-between;gap:8px;text-align:left;padding:10px 12px;background:var(--bg2);border-top:1px solid var(--line);font-size:15px}
+.pp-res button:first-child{border-top:0}
+.pp-res small{color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spec-hint{margin-top:8px}
+.spec-hint .btn{margin-top:8px}
 .dur{display:flex;gap:6px;margin-top:8px}
 .dur button{flex:1;height:32px;border-radius:9px;background:var(--bg2);font-size:13px;font-weight:600;color:var(--hint);text-align:center}
 .status-line{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:10px 12px;border-radius:12px;margin-bottom:14px}
@@ -255,6 +266,55 @@ input[type=date].input,input[type=time].input{line-height:46px}
 #f-wd{gap:5px}
 #f-wd button{width:42px;padding:0;height:36px}
 .occ-sum{font-size:13px;color:var(--hint);margin:2px 2px 6px}
+/* праздники и времена года */
+.fest{display:inline-block;margin-left:6px;font-size:18px;vertical-align:1px;cursor:default}
+.brand{cursor:default;user-select:none;-webkit-user-select:none}
+.fest-banner{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:var(--r);padding:10px 8px 10px 14px;margin:2px 0 10px;font-weight:600}
+.fest-banner .e{font-size:22px}
+.fest-banner .t{flex:1}
+.fest-banner button{width:30px;height:30px;border-radius:50%;color:var(--hint);display:grid;place-items:center}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.fx span{position:absolute;top:-40px;color:#8ec5ff;text-shadow:0 0 6px rgba(120,180,255,.5);animation:fxfall linear forwards;opacity:.9;will-change:transform}
+@keyframes fxfall{to{transform:translate3d(var(--dx,0),112vh,0) rotate(var(--rot,360deg))}}
+@media (prefers-reduced-motion:reduce){.fx{display:none}}
+/* листание дней */
+main.swipe-l{animation:swl .22s ease-out}main.swipe-r{animation:swr .22s ease-out}
+@keyframes swl{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes swr{from{transform:translateX(-28px);opacity:.4}to{transform:none;opacity:1}}
+.swipe-hint{text-align:center;font-size:12px;color:var(--hint);margin:14px 0 0}
+/* боковой календарь — только на широком экране */
+.side{display:none}
+@media (min-width:640px){
+  .wrap{max-width:720px}
+  nav.tabs .in{max-width:720px}
+}
+@media (min-width:900px){
+  .wrap{max-width:1120px;padding:0 24px}
+  nav.tabs .in{max-width:1120px}
+  .hdr.wrap{padding-left:24px!important;padding-right:24px!important}
+  .sched{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;align-items:start}
+  .side{display:block;position:sticky;top:74px;background:var(--card);border-radius:18px;padding:16px}
+  .side .cal-d{height:42px}
+  .weeknav .mbtn{pointer-events:none}.weeknav .mbtn svg:last-child{display:none}
+  .swipe-hint{display:none}
+  .list-wide{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .list-wide>*{margin:0!important}
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(620px,92vw);max-height:88vh;border-radius:20px;padding:18px 22px 20px;transform:translate(-50%,-46%) scale(.98);opacity:0;transition:transform .2s,opacity .2s}
+  .sheet.show{transform:translate(-50%,-50%);opacity:1}
+  .grab{display:none}
+  .fab{left:auto;right:max(24px,calc((100vw - 1120px)/2 + 24px));width:360px}
+}
+/* телефон горизонтально */
+@media (orientation:landscape) and (max-height:520px){
+  .hdr{padding:6px 14px 4px}.brand{font-size:18px}.sub{display:none}
+  .day{padding:4px 0}
+  nav.tabs button{padding-top:4px;padding-bottom:4px}
+  body.with-tabs{padding-bottom:calc(56px + env(safe-area-inset-bottom))}
+  .sheet{max-height:96vh}
+  .fab{bottom:calc(52px + env(safe-area-inset-bottom));left:auto;right:14px;width:auto;padding:0}
+  .fab .btn{width:auto;padding:0 20px;height:44px}
+  body.with-fab{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+}
 #toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;transition:opacity .2s,transform .2s;z-index:40;background:rgba(22,24,28,.94);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 28px);width:max-content;text-align:center;pointer-events:none;box-shadow:var(--shadow)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.error{background:#c93c41}
@@ -505,6 +565,7 @@ function render(keepScroll) {
   document.body.classList.toggle('with-tabs', S.screen === 'app');
   document.body.classList.toggle('with-fab', S.screen === 'app' && S.tab === 'schedule' && canBook(S.day));
   if (keepScroll) window.scrollTo(0, y);
+  festOnce();
 }
 
 function hero(icon, cls, title, text) {
@@ -584,12 +645,64 @@ function vRejected() {
     '<button class="btn sec" data-a="reload">Обновить</button></div>';
 }
 
+/* --- праздники и времена года --- */
+var HOLIDAYS = {
+  '02-23': ['🎖️', 'С Днём защитника Отечества!', ''], '03-08': ['🌷', 'С 8 Марта!', 'petals'],
+  '04-12': ['🚀', 'С Днём космонавтики!', 'confetti'], '05-01': ['🌼', 'С Праздником Весны и Труда!', 'petals'],
+  '05-09': ['🎗️', 'С Днём Победы!', ''], '06-01': ['🎈', 'С Днём защиты детей!', 'confetti'],
+  '06-12': ['🇷🇺', 'С Днём России!', ''], '08-30': ['🏛️', 'С Днём Республики Татарстан и Днём Казани!', 'confetti'],
+  '09-01': ['📚', 'С Днём знаний!', 'confetti'], '10-05': ['🍎', 'С Днём учителя!', 'confetti'],
+  '11-04': ['🤝', 'С Днём народного единства!', '']
+};
+function festive(iso) {
+  var md = iso.slice(5), m = +iso.slice(5, 7);
+  if (md >= '12-25' || md <= '01-08') return { e: '🎄', text: 'С Новым годом!', fx: 'snow', holiday: true };
+  if (HOLIDAYS[md]) return { e: HOLIDAYS[md][0], text: HOLIDAYS[md][1], fx: HOLIDAYS[md][2], holiday: true };
+  if (m === 12 || m <= 2) return { e: '❄️', fx: 'snow' };
+  if (m <= 5) return { e: '🌱', fx: 'sprout' };
+  if (m <= 8) return { e: '☀️', fx: 'sun' };
+  return { e: '🍁', fx: 'leaves' };
+}
+var FX = { snow: ['❄️', '❅', '❆'], leaves: ['🍁', '🍂', '🍃'], petals: ['🌷', '🌸', '🌼'], confetti: ['🎉', '✨', '🎊', '🎈'], sun: ['☀️', '🌼', '🦋'], sprout: ['🌱', '🌸', '🐝'] };
+function burst(kind, n) {
+  var set = FX[kind]; if (!set) return;
+  try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+  var box = document.createElement('div'); box.className = 'fx';
+  for (var i = 0; i < (n || 18); i++) {
+    var sp = document.createElement('span');
+    sp.textContent = set[i % set.length];
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.fontSize = (14 + Math.random() * 14) + 'px';
+    sp.style.animationDuration = (4 + Math.random() * 3.5) + 's';
+    sp.style.animationDelay = (Math.random() * 1.8) + 's';
+    sp.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+    sp.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    box.appendChild(sp);
+  }
+  document.body.appendChild(box);
+  setTimeout(function () { box.remove(); }, 10000);
+}
+var festShown = false;
+function festOnce() {
+  if (festShown || S.screen !== 'app') return;
+  festShown = true;
+  var f = festive(S.d.settings.today);
+  if (f.holiday && f.fx) setTimeout(function () { burst(f.fx, 22); }, 600);
+}
+function festBanner() {
+  var st = S.d.settings, f = festive(st.today), key = 'fest:' + st.today, off = false;
+  if (!f.holiday) return '';
+  try { off = localStorage.getItem(key) === '1'; } catch (e) {}
+  if (off || S.festOff === st.today) return '';
+  return '<div class="fest-banner"><span class="e">' + f.e + '</span><span class="t">' + esc(f.text) + '</span><button data-a="festx" aria-label="Скрыть">' + I.x + '</button></div>';
+}
+
 function vApp() {
   var d = S.d, me = d.me;
   var pb = me.isAdmin ? pendingBookings().length + pendingUsers().length : 0;
   var sub = S.tab === 'schedule' ? (me.isAdmin ? 'Администратор' : esc(me.short)) : S.tab === 'mine' ? 'Мои заявки' : 'Управление';
   var h = '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px">' +
-    '<div class="ttl"><div class="brand">Актовый зал</div><div class="sub">' + sub + '</div></div>' +
+    '<div class="ttl"><div class="brand" data-a="egg">Актовый зал<span class="fest" title="' + esc(festive(d.settings.today).text || '') + '">' + festive(d.settings.today).e + '</span></div><div class="sub">' + sub + '</div></div>' +
     '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button>' +
     '<button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>';
   h += '<main class="wrap">' + (S.tab === 'schedule' ? vSchedule() : S.tab === 'mine' ? vMine() : vAdmin()) + '</main>';
@@ -606,7 +719,9 @@ function tabBtn(id, icon, label, badge) {
 
 /* --- расписание --- */
 function vSchedule() {
-  var st = S.d.settings, day = S.day, wk = monday(day), h = '';
+  var st = S.d.settings, day = S.day, wk = monday(day), h = festBanner();
+  calMonth = day.slice(0, 7);
+  h += '<div class="sched"><aside class="side"><div id="cal-side">' + calHtml() + '</div></aside><section>';
   var days = []; for (var i = 0; i < 7; i++) days.push(addDays(wk, i));
   var m1 = +days[0].slice(5, 7) - 1, m2 = +days[6].slice(5, 7) - 1;
   var label = m1 === m2 ? MN[m1] + ' ' + days[0].slice(0, 4) : MN[m1] + ' – ' + MN[m2].toLowerCase() + ' ' + days[6].slice(0, 4);
@@ -635,7 +750,8 @@ function vSchedule() {
   h += '</div>';
   h += '<div class="list mt">' + (list.length ? list.map(function (b) { return bkCard(b); }).join('') :
     '<div class="empty"><b>Броней нет</b>' + (canBook(day) ? 'Зал свободен весь день' : '') + '</div>') + '</div>';
-  return h;
+  h += '<p class="swipe-hint">Листайте дни пальцем влево и вправо</p>';
+  return h + '</section></div>';
 }
 
 function track(iso, sel) {
@@ -722,7 +838,7 @@ function vAdmin() {
   }
   if (S.admTab === 'access') {
     if (!pu.length) return h + '<div class="card empty"><b>Новых заявок на доступ нет</b>Ссылку на бота можно отправить коллегам — они зарегистрируются сами.</div>';
-    return h + '<div class="list">' + pu.map(function (u) {
+    return h + '<div class="list list-wide">' + pu.map(function (u) {
       return '<div class="card"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">' + esc(initials(u.fio)) + '</div>' +
         '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(u.fio) + '</div><div class="hint small">' + esc(u.position || '—') + '</div></div></div>' +
         '<dl class="kv mt">' + (u.tg ? '<dt>Telegram</dt><dd>' + esc(u.tg) + '</dd>' : '') + (u.max ? '<dt>MAX</dt><dd>' + esc(u.max) + '</dd>' : '') +
@@ -739,8 +855,8 @@ function vAdmin() {
     return !q || (u.fio + ' ' + u.position + ' ' + u.email + ' ' + u.tg + ' ' + u.max).toLowerCase().indexOf(q) >= 0;
   }).sort(function (a, b) { return rank(a) - rank(b) || a.fio.localeCompare(b.fio, 'ru'); });
   h += '<div class="field"><input class="input" id="q" type="search" placeholder="Поиск по имени, должности, email" value="' + esc(S.q) + '"></div>';
-  return h + '<div class="list">' + (people.length ? people.map(function (u) {
-    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : 'Бронирование') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
+  return h + '<div class="list list-wide">' + (people.length ? people.map(function (u) {
+    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : 'Бронирование') + (u.specialty && u.specialty.length ? ' · ' + u.specialty.join(', ').toLowerCase() : '') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
     return '<button class="person" data-a="user" data-v="' + u.uid + '"><div class="avatar">' + esc(initials(u.fio)) + '</div><div class="body">' +
       '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
@@ -858,6 +974,8 @@ function openForm(pre) {
     if (!x) return;
     if (x.toLowerCase() === ownSpec.toLowerCase()) specSel[ownSpec] = true; else specSel[x] = true;
   });
+  var people = (S.d.people || []).filter(function (x) { return x.uid !== me.uid; }), partSel = [];
+  (pre.participants || []).forEach(function (x) { if (people.some(function (y) { return y.uid === x.uid; })) partSel.push(x.uid); });
   var until0 = addDays(date, 27) > st.maxDate ? st.maxDate : addDays(date, 27);
   var goText = ed ? (me.isAdmin ? 'Сохранить изменения' : 'Отправить изменения') : me.isAdmin ? 'Забронировать' : 'Отправить заявку';
   var lead = ed ? (me.isAdmin ? 'Изменения сохранятся сразу' + (ed.mine || !ed.requester ? '.' : ', автор получит уведомление.') : 'После изменения бронь снова уйдёт на подтверждение администратору' + (ed.status === 'confirmed' ? ' — до этого она будет в статусе «Ждёт подтверждения».' : '.'))
@@ -881,7 +999,9 @@ function openForm(pre) {
     '<div class="field"><label>Технические специалисты</label><div class="opts" id="f-spec">' +
       specList.map(function (x) { return '<button type="button" class="' + (specSel[x] ? 'on' : '') + '" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') +
       '<i class="sep"></i><button type="button" class="own' + (specSel[ownSpec] ? ' on' : '') + '" data-v="' + esc(ownSpec) + '">Приглашаем своих специалистов</button></div>' +
-      '<div class="hint small" style="margin:6px 2px 0">Отметьте, кто нужен от школы. Ничего не выбрано — специалисты не нужны.</div></div>' +
+      '<div class="hint small" style="margin:6px 2px 0">Отметьте, кто нужен от школы. Ничего не выбрано — специалисты не нужны.</div><div id="f-spechint"></div></div>' +
+    (people.length ? '<div class="field"><label for="f-pq">Участники <span style="opacity:.7">— получат уведомление, когда бронь подтвердят</span></label>' +
+      '<div class="pp-sel" id="f-psel"></div><input class="input" id="f-pq" type="search" autocomplete="off" placeholder="Найти сотрудника по фамилии"><div class="pp-res" id="f-pres"></div></div>' : '') +
     '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
     '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
     '<button class="btn" type="submit" id="f-go">' + goText + '</button></form>';
@@ -977,9 +1097,37 @@ function openForm(pre) {
         q('f-e').value = fmt(Math.min(s + +b.dataset.d, toMin(st.dayEnd))); check(); haptic();
       });
     });
+    var pname = function (uid) { var x = people.filter(function (y) { return y.uid === uid; })[0]; return x ? x.name : ''; };
+    var renderSpecHint = function () {
+      var box = q('f-spechint'); if (!box) return;
+      var need = specList.filter(function (x) { return specSel[x]; }), lines = [], add = [];
+      need.forEach(function (sp) {
+        var bosses = (S.d.people || []).filter(function (x) { return (x.team || []).indexOf(sp) >= 0; });
+        if (!bosses.length) return;
+        var ok = bosses.some(function (x) { return x.uid === me.uid || partSel.indexOf(x.uid) >= 0; });
+        if (!ok) { lines.push(sp.toLowerCase()); bosses.forEach(function (x) { if (add.indexOf(x.uid) < 0) add.push(x.uid); }); }
+      });
+      box.innerHTML = lines.length ? '<div class="warnbox w spec-hint">Чтобы ' + esc(lines.join(', ')) + ' получил(и) сообщение, добавьте участником ' +
+        esc(add.map(pname).join(' или ')) + ' — специалисты в его команде.' +
+        add.map(function (uid) { return '<button type="button" class="btn sm sec" data-padd="' + uid + '">Добавить ' + esc(pname(uid)) + '</button>'; }).join('') + '</div>' : '';
+    };
+    var renderParts = function () {
+      var sel = q('f-psel'); if (!sel) { renderSpecHint(); return; }
+      sel.innerHTML = partSel.map(function (uid) { return '<span class="pp-chip">' + esc(pname(uid)) + '<button type="button" data-prem="' + uid + '" aria-label="Убрать">' + I.x.replace('class="i"', 'class="i s"') + '</button></span>'; }).join('');
+      var qv = q('f-pq').value.trim().toLowerCase();
+      q('f-pres').innerHTML = !qv ? '' : people.filter(function (x) { return partSel.indexOf(x.uid) < 0 && (x.fio + ' ' + x.position).toLowerCase().indexOf(qv) >= 0; }).slice(0, 6)
+        .map(function (x) { return '<button type="button" data-padd="' + x.uid + '"><span>' + esc(x.fio) + '</span><small>' + esc(x.position || '') + '</small></button>'; }).join('');
+      renderSpecHint();
+    };
+    sh.addEventListener('click', function (ev) {
+      var a = ev.target.closest('[data-padd]'), r = ev.target.closest('[data-prem]');
+      if (a) { if (partSel.indexOf(a.dataset.padd) < 0 && partSel.length < 20) partSel.push(a.dataset.padd); if (q('f-pq')) q('f-pq').value = ''; renderParts(); haptic(); }
+      if (r) { partSel = partSel.filter(function (x) { return x !== r.dataset.prem; }); renderParts(); haptic(); }
+    });
+    if (q('f-pq')) q('f-pq').addEventListener('input', renderParts);
     q('f-spec').addEventListener('click', function (ev) {
       var b = ev.target.closest('button'); if (!b) return;
-      specSel[b.dataset.v] = !specSel[b.dataset.v]; b.classList.toggle('on', !!specSel[b.dataset.v]); haptic();
+      specSel[b.dataset.v] = !specSel[b.dataset.v]; b.classList.toggle('on', !!specSel[b.dataset.v]); renderSpecHint(); haptic();
     });
     q('f-type').addEventListener('click', function (ev) {
       var b = ev.target.closest('button'); if (!b) return;
@@ -992,7 +1140,7 @@ function openForm(pre) {
       var title = q('f-t').value.trim();
       if (!title) { q('f-t').focus(); toast('Укажите название мероприятия', 'error'); return; }
       var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim(),
-        specs: Object.keys(specSel).filter(function (k) { return specSel[k]; }) };
+        specs: Object.keys(specSel).filter(function (k) { return specSel[k]; }), participants: partSel.slice() };
       var action = 'createBooking', data, first;
       if (ed) {
         if (blocked) { haptic('error'); return; }
@@ -1015,6 +1163,7 @@ function openForm(pre) {
       });
     });
     paintWd();
+    renderParts();
     check();
   });
 }
@@ -1031,7 +1180,7 @@ function openBooking(row) {
     (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
-    (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
+    (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
   if (me.isAdmin && b.status === 'pending' && future) {
@@ -1075,11 +1224,23 @@ function openUser(uid) {
       ['view', 'book', 'admin'].map(function (l) {
         return '<button type="button" class="' + (l === lvl ? 'on' : '') + '" data-a="ulevel" data-v="' + u.uid + '" data-l="' + l + '">' + LEVELS[l] + '</button>';
       }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Администратор — подтверждает брони и управляет людьми.</div></div>');
+    if (lvl) {
+      var spl = S.d.settings.specialists || [], cur = u.specialty || [], bossU = u.boss ? findUser(u.boss) : null;
+      btns.push('<div class="field" style="margin:8px 0 4px"><label>Специалист в вашей команде</label><div class="opts" id="u-spec">' +
+        spl.map(function (x) { return '<button type="button" class="' + (cur.indexOf(x) >= 0 ? 'on' : '') + '" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+        '<div class="hint small" style="margin:6px 2px 0">' + (cur.length && bossU && !bossU.isMe ? 'Сейчас в команде ' + esc(bossU.fio) + '. ' : '') +
+        'Сообщение придёт, когда в брони отметят этого специалиста и участником выберут вас. В списке участников подчинённых не видно.</div>' +
+        '<button type="button" class="btn sm sec" style="margin-top:8px" data-a="uspec" data-v="' + u.uid + '">Сохранить специализацию</button></div>');
+    }
+    if (u.status === 'Одобрен') btns.push('<button class="btn sec" data-a="ublock" data-v="' + u.uid + '">Закрыть доступ</button>');
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить пользователя</button>');
   } else {
     btns.push('<p class="hint small" style="text-align:center">Это вы. Свои права изменить нельзя.</p>');
   }
-  openSheet(h + '<div class="sheet-actions mt2">' + btns.join('') + '</div>');
+  openSheet(h + '<div class="sheet-actions mt2">' + btns.join('') + '</div>', function (sh) {
+    var box = $('#u-spec', sh); if (!box) return;
+    box.addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) { b.classList.toggle('on'); haptic(); } });
+  });
 }
 
 /* --- профиль --- */
@@ -1117,7 +1278,7 @@ var A = {
     var y = +calMonth.slice(0, 4), m = +calMonth.slice(5, 7) + +el.dataset.v;
     if (m < 1) { m = 12; y--; } else if (m > 12) { m = 1; y++; }
     calMonth = y + '-' + p2(m);
-    var box = $('#cal-body'); if (box) box.innerHTML = calHtml();
+    ['#cal-body', '#cal-side'].forEach(function (id) { var box = $(id); if (box) box.innerHTML = calHtml(); });
     haptic();
   },
   calpick: function (el) { S.day = clampDay(el.dataset.v); closeAll(); haptic(); render(); window.scrollTo(0, 0); },
@@ -1126,7 +1287,7 @@ var A = {
     var st = S.d.settings, minD = st.today > st.minDate ? st.today : st.minDate, next = addDays(b.date, 7);
     while (next < minD) next = addDays(next, 7);
     closeAll();
-    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, repeat: true });
+    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants, repeat: true });
   },
   confirmseries: function (el) {
     var sid = el.dataset.v, t = S.d.settings.today;
@@ -1156,7 +1317,7 @@ var A = {
   edit: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     closeAll();
-    openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs });
+    openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants });
   },
   user: function (el) { openUser(el.dataset.v); },
   confirm: function (el) {
@@ -1179,6 +1340,10 @@ var A = {
       .then(function (r) { if (r) act('cancelBooking', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); }); });
   },
   uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book' }).then(function (d) { if (d) closeAll(); }); },
+  uspec: function (el) {
+    var specs = [].map.call(document.querySelectorAll('#u-spec button.on'), function (b) { return b.dataset.v; });
+    act('setSpecialty', { uid: el.dataset.v, specs: specs }).then(function (d) { if (d) closeAll(); });
+  },
   ulevel: function (el) {
     var u = findUser(el.dataset.v), l = el.dataset.l; if (!u) return;
     if (u.status === 'Одобрен' && (u.level || 'book') === l) return;
@@ -1187,6 +1352,25 @@ var A = {
       ask({ title: l === 'admin' ? 'Сделать администратором?' : 'Снять права администратора?', text: l === 'admin' ? esc(u.fio) + ' сможет подтверждать брони и управлять пользователями.' : esc(u.fio) + ': ' + LEVELS[l].toLowerCase() + '.', ok: l === 'admin' ? 'Сделать администратором' : 'Изменить права' })
         .then(function (r) { if (r) go(); });
     } else go();
+  },
+  festx: function () {
+    var t = S.d.settings.today; S.festOff = t;
+    try { localStorage.setItem('fest:' + t, '1'); } catch (e) {}
+    render(true);
+  },
+  egg: function () {
+    clearTimeout(S.eggT); S.egg = (S.egg || 0) + 1;
+    S.eggT = setTimeout(function () { S.egg = 0; }, 1500);
+    if (S.egg >= 5) {
+      S.egg = 0; var f = festive(S.d.settings.today);
+      burst(f.fx || 'confetti', 30); haptic('success');
+      toast(f.holiday ? f.e + ' ' + f.text : '🎭 Занавес! Вы нашли пасхалку актового зала');
+    }
+  },
+  ublock: function (el) {
+    var u = findUser(el.dataset.v); if (!u) return;
+    ask({ title: 'Закрыть доступ?', text: esc(u.fio) + ' больше не сможет открыть приложение. Брони останутся в таблице. Вернуть доступ можно здесь же, выбрав права.', ok: 'Закрыть доступ', danger: true })
+      .then(function (r) { if (r) act('rejectUser', { uid: u.uid }).then(function (d) { if (d) closeAll(); }); });
   },
   ureject: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
@@ -1223,6 +1407,25 @@ document.addEventListener('click', function (ev) {
   A[el.dataset.a](el);
 });
 document.addEventListener('focusout', function (ev) { if (ev.target.id === 'r-fio') checkTwin(); });
+/* листание дней пальцем */
+(function () {
+  var sx = 0, sy = 0, t0 = 0, on = false;
+  document.addEventListener('touchstart', function (ev) {
+    on = false;
+    if (S.screen !== 'app' || S.tab !== 'schedule' || ev.touches.length !== 1) return;
+    if (document.querySelector('.sheet, .dialog-wrap') || ev.target.closest('input,textarea,select,.side,nav.tabs')) return;
+    sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; t0 = Date.now(); on = true;
+  }, { passive: true });
+  document.addEventListener('touchend', function (ev) {
+    if (!on) return; on = false;
+    var t = ev.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - t0 > 700) return;
+    var next = clampDay(addDays(S.day, dx < 0 ? 1 : -1));
+    if (next === S.day) return;
+    S.day = next; haptic(); render();
+    var m = $('main'); if (m) { m.classList.add(dx < 0 ? 'swipe-l' : 'swipe-r'); }
+  }, { passive: true });
+})();
 document.addEventListener('input', function (ev) {
   if (ev.target.id === 'r-fio') { S.regFio = ev.target.value; clearTimeout(S.twinT); S.twinT = setTimeout(checkTwin, 900); }
   if (ev.target.id === 'q') {
