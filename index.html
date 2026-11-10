@@ -175,6 +175,12 @@ input[type=date].input,input[type=time].input{line-height:46px}
 .pp-res button:first-child{border-top:0}
 .pp-res small{color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spec-hint{margin-top:8px}
+.cl-box{background:var(--bg2);border-radius:14px;padding:12px;margin:-4px 0 14px}
+.cl-box .row3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px}
+.cl-box .input{background:var(--card)}
+.cl-st{font-size:13px;margin-top:8px}
+.cl-st.bad{color:var(--danger)}.cl-st.ok{color:var(--ok)}
+.bk.anon .t{color:var(--hint)}
 .spec-hint .btn{margin-top:8px}
 .dur{display:flex;gap:6px;margin-top:8px}
 .dur button{flex:1;height:32px;border-radius:9px;background:var(--bg2);font-size:13px;font-weight:600;color:var(--hint);text-align:center}
@@ -565,7 +571,7 @@ function freeWindows(iso) {
   return out.filter(function (w) { return w[1] - w[0] >= 15; });
 }
 function mayBook() { return !!(S.d && S.d.me && S.d.me.canBook !== false); }
-var LEVELS = { admin: 'Администратор', book: 'Просмотр и бронирование', view: 'Только просмотр' };
+var LEVELS = { admin: 'Администратор', book: 'Просмотр и бронирование', view: 'Только просмотр', clean: 'Клининг' };
 function canBook(iso) { var st = S.d.settings; return mayBook() && iso >= st.today && iso >= st.minDate && iso <= st.maxDate; }
 function pendingBookings() { var t = S.d.settings.today; return bookings().filter(function (b) { return b.status === 'pending' && b.date >= t; }).sort(byStart); }
 function pendingUsers() { return ((S.d.admin && S.d.admin.users) || []).filter(function (u) { return u.status === 'Заявка'; }); }
@@ -749,15 +755,16 @@ function festBanner() {
 function vApp() {
   var d = S.d, me = d.me;
   var pb = me.isAdmin ? pendingBookings().length + pendingUsers().length : 0;
-  var sub = S.tab === 'schedule' ? (me.isAdmin ? 'Администратор' : esc(me.short)) : S.tab === 'mine' ? 'Мои заявки' : 'Управление';
+  if (me.isCleaner && (!S.cleanInit || (S.tab !== 'schedule' && S.tab !== 'clean'))) { S.tab = 'clean'; S.cleanInit = true; }
+  var sub = S.tab === 'schedule' ? (me.isAdmin ? 'Администратор' : esc(me.short)) : S.tab === 'mine' ? 'Мои заявки' : S.tab === 'clean' ? 'Уборка' : 'Управление';
   var h = '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px">' +
     '<div class="ttl"><div class="brand" data-a="egg">Актовый зал<span class="fest" title="' + esc(festive(d.settings.today).text || '') + '">' + festive(d.settings.today).e + '</span></div><div class="sub">' + sub + '</div></div>' +
     '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button>' +
     '<button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>';
-  h += '<main class="wrap">' + (S.tab === 'schedule' ? vSchedule() : S.tab === 'mine' ? vMine() : vAdmin()) + '</main>';
+  h += '<main class="wrap">' + (S.tab === 'schedule' ? vSchedule() : S.tab === 'clean' ? vCleaning() : S.tab === 'mine' ? vMine() : vAdmin()) + '</main>';
   if (S.tab === 'schedule' && canBook(S.day)) h += '<div class="fab"><button class="btn" data-a="new">' + I.plus + 'Забронировать</button></div>';
   h += '<nav class="tabs"><div class="in">' +
-    tabBtn('schedule', I.cal, 'Расписание') + tabBtn('mine', I.list, 'Мои заявки') +
+    tabBtn('schedule', I.cal, 'Расписание') + (me.isCleaner ? tabBtn('clean', I.list, 'Уборка', bookings().filter(function (b) { return b.cleaning && b.cleaning.req && !b.cleaning.set && b.cleaning.req.date >= S.d.settings.today; }).length) : tabBtn('mine', I.list, 'Мои заявки')) +
     (me.isAdmin ? tabBtn('admin', I.shield, 'Админ', pb) : '') + '</div></nav>';
   return h;
 }
@@ -828,13 +835,14 @@ function track(iso, sel) {
 
 function bkCard(b, opts) {
   opts = opts || {};
-  var cls = 'bk' + (b.status === 'pending' ? ' p' : b.status === 'cancelled' ? ' x' : '');
+  var cls = 'bk' + (b.status === 'pending' ? ' p' : b.status === 'cancelled' ? ' x' : '') + (b.anon ? ' anon' : '');
   var chips = [];
   if (b.status === 'pending' && !opts.noStatus) chips.push('<span class="chip warn">Ждёт подтверждения</span>');
   if (b.status === 'cancelled') chips.push('<span class="chip mut">Отменено</span>');
   if (opts.showMine !== false && b.mine && b.status !== 'cancelled') chips.push('<span class="chip acc">Моя</span>');
   if (b.neededAs && b.neededAs.length) chips.push('<span class="chip ok">🎛 Вы нужны: ' + esc(b.neededAs.join(', ').toLowerCase()) + '</span>');
   if (b.series) chips.push('<span class="chip mut">' + I.repeat + 'Серия</span>');
+  if (b.cleaning && (b.anon || b.mine || S.d.me.isAdmin)) chips.push(clChip(b));
   if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
   var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
   return '<button class="' + cls + '" data-a="bk" data-v="' + b.row + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
@@ -852,6 +860,77 @@ function grouped(list, render) {
 }
 
 /* --- мои заявки --- */
+/* --- уборка --- */
+function clText(c) { return c ? shortDate(c.date) + ', ' + c.start + '–' + c.end : ''; }
+function clBusy(date, s, e, exceptRow, skipRow) {
+  // что мешает уборке: брони (подтверждённые и ждущие) и уже назначенные уборки
+  var out = [];
+  bookings().forEach(function (b) {
+    if (b.status === 'cancelled' || b.date !== date) return;
+    var bs = b.row === skipRow ? null : toMin(b.start), be = toMin(b.end);
+    if (bs != null && be != null && bs < e && be > s) out.push(b.start + '–' + b.end + (b.anon ? '' : ' «' + b.title + '»'));
+    var c = b.cleaning && b.cleaning.set;
+    if (c && b.row !== exceptRow && c.date === date && toMin(c.start) < e && toMin(c.end) > s) out.push('уборка ' + c.start + '–' + c.end);
+  });
+  return out;
+}
+function clChip(b) {
+  if (!b.cleaning) return '';
+  return b.cleaning.set ? '<span class="chip ok">🧹 Уборка ' + esc(b.cleaning.set.start) + '</span>' : '<span class="chip warn">🧹 Уборка: ждёт времени</span>';
+}
+function vCleaning() {
+  var t = S.d.settings.today;
+  var list = bookings().filter(function (b) { return b.cleaning && b.cleaning.req && (b.cleaning.set || b.cleaning.req).date >= t; })
+    .sort(function (a, b) { var x = (a.cleaning.set || a.cleaning.req), y = (b.cleaning.set || b.cleaning.req); return x.date < y.date ? -1 : x.date > y.date ? 1 : toMin(x.start) - toMin(y.start); });
+  var wait = list.filter(function (b) { return !b.cleaning.set; }), done = list.filter(function (b) { return b.cleaning.set; });
+  var card = function (b) {
+    var c = b.cleaning;
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>' + esc(humanFull((c.set || c.req).date)) + '</b>' +
+      (c.set ? '<span class="chip ok">Назначено</span>' : '<span class="chip warn">Ждёт времени</span>') + '</div>' +
+      '<dl class="kv" style="margin:8px 0"><dt>Просят</dt><dd>' + esc(clText(c.req)) + '</dd>' + (c.set ? '<dt>Назначено</dt><dd><b>' + esc(clText(c.set)) + '</b></dd>' : '') +
+      '<dt>Зал занят</dt><dd>' + esc(shortDate(b.date) + ', ' + b.start + '–' + b.end) + '</dd></dl>' +
+      '<div class="actions">' + (!c.set ? '<button class="btn sm" data-a="clok" data-v="' + b.row + '">' + I.check + 'Подходит</button>' : '') +
+      '<button class="btn sm sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время' : 'Другое время') + '</button></div></div>';
+  };
+  return '<div class="hint small" style="margin:2px 2px 12px">Названия мероприятий и кто бронировал — скрыты. Назначенное время сразу уйдёт автору брони.</div>' +
+    (wait.length ? '<div class="sec-t">Ждут назначения</div>' + wait.map(card).join('') : '') +
+    (done.length ? '<div class="sec-t">Назначено</div>' + done.map(card).join('') : '') +
+    (!list.length ? '<div class="card empty"><b>Заявок на уборку нет</b>Когда кто-то закажет уборку, придёт сообщение в бот.</div>' : '');
+}
+function openCleanForm(row) {
+  var b = findBooking(row); if (!b || !b.cleaning) return;
+  var c = b.cleaning.set || b.cleaning.req, st = S.d.settings;
+  var h = '<h3>Время уборки</h3><p class="lead">Просят: ' + esc(clText(b.cleaning.req)) + '. Зал занят ' + esc(b.start + '–' + b.end) + '. Выберите время, когда зал свободен.</p>' +
+    '<form id="clf"><div class="field"><label for="c-date">Дата</label><input class="input" type="date" id="c-date" min="' + st.today + '" value="' + c.date + '"></div>' +
+    '<div class="two"><div class="field"><label for="c-s">Начало</label><input class="input" type="time" id="c-s" step="300" value="' + c.start + '"></div>' +
+    '<div class="field"><label for="c-e">Окончание</label><input class="input" type="time" id="c-e" step="300" value="' + c.end + '"></div></div>' +
+    '<div id="c-track"></div><div class="cl-st" id="c-st"></div>' +
+    '<button class="btn" type="submit" id="c-go" style="margin-top:12px">Назначить и сообщить автору</button></form>';
+  openSheet(h, function (sh) {
+    var q = function (id) { return sh.querySelector('#' + id); }, bad = false;
+    var chk = function () {
+      var d = q('c-date').value, s = toMin(q('c-s').value), e = toMin(q('c-e').value), stx = q('c-st');
+      q('c-track').innerHTML = d ? track(d, { s: s, e: e }) : '';
+      bad = !d || s == null || e == null || e <= s;
+      if (bad) { stx.className = 'cl-st bad'; stx.textContent = 'Укажите время: окончание позже начала'; }
+      else if (d < st.today) { bad = true; stx.className = 'cl-st bad'; stx.textContent = 'Эта дата уже прошла'; }
+      else {
+        var busy = clBusy(d, s, e, b.row);
+        bad = busy.length > 0;
+        stx.className = 'cl-st ' + (bad ? 'bad' : 'ok');
+        stx.textContent = bad ? 'Пересекается: ' + busy.join(', ') : 'Зал свободен — можно назначить';
+      }
+      q('c-go').disabled = bad;
+    };
+    ['c-date', 'c-s', 'c-e'].forEach(function (id) { q(id).addEventListener('input', chk); q(id).addEventListener('change', chk); });
+    chk();
+    q('clf').addEventListener('submit', function (ev) {
+      ev.preventDefault(); if (bad) return;
+      act('setCleaning', { row: b.row, csig: b.csig, date: q('c-date').value, start: q('c-s').value, end: q('c-e').value }).then(function (d) { if (d) closeAll(); });
+    });
+  });
+}
+
 function vMine() {
   var t = S.d.settings.today;
   var mine = bookings().filter(function (b) { return b.mine; });
@@ -1077,6 +1156,10 @@ function openForm(pre) {
       '<div class="hint small" style="margin:6px 2px 0">Отметьте, кто нужен от школы. Ничего не выбрано — специалисты не нужны.</div><div id="f-spechint"></div></div>' +
     (people.length ? '<div class="field"><label for="f-pq">Участники <span style="opacity:.7">— получат уведомление, когда бронь подтвердят</span></label>' +
       '<div class="pp-sel" id="f-psel"></div><input class="input" id="f-pq" type="search" autocomplete="off" placeholder="Найти сотрудника по фамилии"><div class="pp-res" id="f-pres"></div></div>' : '') +
+    '<label class="check" style="margin:0 2px 14px"><input type="checkbox" id="f-cl"' + (pre.cleaning ? ' checked' : '') + '><span><b>🧹 Нужна уборка перед мероприятием</b><br><span class="hint small">Менеджер по клинингу получит заявку и назначит точное время — оно придёт вам в бот.</span></span></label>' +
+    '<div class="cl-box" id="f-clbox"' + (pre.cleaning ? '' : ' hidden') + '><div class="row3"><div class="field" style="margin:0"><label for="f-cld">Дата</label><input class="input sm" type="date" id="f-cld"></div>' +
+      '<div class="field" style="margin:0"><label for="f-cls">С</label><input class="input sm" type="time" step="300" id="f-cls"></div><div class="field" style="margin:0"><label for="f-cle">До</label><input class="input sm" type="time" step="300" id="f-cle"></div></div>' +
+      '<div class="cl-st" id="f-clst"></div></div>' +
     '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
     '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
     '<button class="btn" type="submit" id="f-go">' + goText + '</button></form>';
@@ -1202,6 +1285,29 @@ function openForm(pre) {
     });
     if (q('f-pq')) q('f-pq').addEventListener('input', renderParts);
     q('f-r').addEventListener('input', function () { renderSpecHint(); });
+    var clAuto = !(pre.cleaning && pre.cleaning.req);
+    var clDefault = function () {
+      var d = q('f-date').value, s0 = toMin(q('f-s').value);
+      if (!d || s0 == null) return;
+      var cs = Math.max(toMin('06:00'), s0 - 40);
+      q('f-cld').value = d; q('f-cls').value = fmt(cs); q('f-cle').value = fmt(Math.max(cs + 10, s0));
+    };
+    var clCheck = function () {
+      if (!q('f-cl').checked) return;
+      var d = q('f-cld').value, s1 = toMin(q('f-cls').value), e1 = toMin(q('f-cle').value), stx = q('f-clst');
+      if (!d || s1 == null || e1 == null || e1 <= s1) { stx.className = 'cl-st bad'; stx.textContent = 'Укажите время уборки: окончание позже начала'; return; }
+      var busy = clBusy(d, s1, e1, exRow, exRow);
+      var evS = toMin(q('f-s').value), evE = toMin(q('f-e').value);
+      if (d === q('f-date').value && evS != null && s1 < evE && e1 > evS) { stx.className = 'cl-st bad'; stx.textContent = 'Уборка пересекается с вашим же мероприятием'; return; }
+      stx.className = 'cl-st ' + (busy.length ? 'bad' : 'ok');
+      stx.textContent = busy.length ? 'В это время зал занят: ' + busy.join(', ') + ' — клининг подберёт другое время' : 'Зал в это время свободен';
+    };
+    if (pre.cleaning && pre.cleaning.req) { q('f-cld').value = pre.cleaning.req.date; q('f-cls').value = pre.cleaning.req.start; q('f-cle').value = pre.cleaning.req.end; }
+    else clDefault();
+    q('f-cl').addEventListener('change', function () { q('f-clbox').hidden = !q('f-cl').checked; if (q('f-cl').checked && clAuto) clDefault(); clCheck(); haptic(); });
+    ['f-cld', 'f-cls', 'f-cle'].forEach(function (id) { q(id).addEventListener('input', function () { clAuto = false; clCheck(); }); q(id).addEventListener('change', function () { clAuto = false; clCheck(); }); });
+    ['f-date', 'f-s'].forEach(function (id) { q(id).addEventListener('change', function () { if (clAuto) clDefault(); clCheck(); }); q(id).addEventListener('input', function () { if (clAuto) clDefault(); clCheck(); }); });
+    clCheck();
     q('f-spec').addEventListener('click', function (ev) {
       var b = ev.target.closest('button'); if (!b) return;
       specSel[b.dataset.v] = !specSel[b.dataset.v]; b.classList.toggle('on', !!specSel[b.dataset.v]); renderSpecHint(); haptic();
@@ -1218,6 +1324,11 @@ function openForm(pre) {
       if (!title) { q('f-t').focus(); toast('Укажите название мероприятия', 'error'); return; }
       var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim(),
         specs: Object.keys(specSel).filter(function (k) { return specSel[k]; }), participants: partSel.slice() };
+      if (q('f-cl').checked) {
+        var cld = q('f-cld').value, cls = q('f-cls').value, cle = q('f-cle').value;
+        if (!cld || !cls || !cle || toMin(cle) <= toMin(cls)) { haptic('error'); toast('Проверьте время уборки', 'error'); return; }
+        base.cleaning = { date: cld, start: cls, end: cle };
+      } else if (ed) base.cleaning = null;
       var action = 'createBooking', data, first;
       if (ed) {
         if (blocked) { haptic('error'); return; }
@@ -1248,6 +1359,14 @@ function openForm(pre) {
 /* --- карточка брони --- */
 function openBooking(row) {
   var b = findBooking(row); if (!b) return;
+  if (b.anon) {
+    var c = b.cleaning;
+    openSheet('<h3>Зал занят</h3><dl class="kv" style="margin:10px 0 16px"><dt>Когда</dt><dd>' + esc(humanFull(b.date) + ', ' + b.start + '–' + b.end) + '</dd>' +
+      (c ? '<dt>Уборку просят</dt><dd>' + esc(clText(c.req)) + '</dd>' + (c.set ? '<dt>Назначено</dt><dd><b>' + esc(clText(c.set)) + '</b></dd>' : '') : '<dt>Уборка</dt><dd>не заказана</dd>') + '</dl>' +
+      (c && c.req ? '<div class="sheet-actions">' + (!c.set ? '<button class="btn" data-a="clok" data-v="' + b.row + '">Подходит: ' + esc(c.req.start + '–' + c.req.end) + '</button>' : '') +
+        '<button class="btn sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время уборки' : 'Назначить другое время') + '</button></div>' : ''));
+    return;
+  }
   var me = S.d.me, st = S.d.settings, future = b.date >= st.today;
   var ser = b.series ? bookings().filter(function (x) { return x.series === b.series && x.status !== 'cancelled' && x.date >= st.today; }) : [];
   var serPending = ser.filter(function (x) { return x.status === 'pending'; });
@@ -1258,7 +1377,8 @@ function openBooking(row) {
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
     (b.neededAs && b.neededAs.length ? '<dt>Вы нужны</dt><dd><b>' + esc(cap(b.neededAs.join(', ').toLowerCase())) + '</b></dd>' : '') +
-    (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
+    (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') +
+    (b.cleaning ? '<dt>Уборка</dt><dd>' + (b.cleaning.set ? '<b>' + esc(clText(b.cleaning.set)) + '</b> — назначено' + (b.cleaning.req ? '<br><span class="hint small">просили ' + esc(clText(b.cleaning.req)) + '</span>' : '') : esc(clText(b.cleaning.req)) + ' — ждёт ответа клининга') + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
   if (me.isAdmin && b.status === 'pending' && future) {
@@ -1309,9 +1429,9 @@ function openUser(uid) {
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить из таблицы</button>');
   } else if (!u.isMe) {
     btns.push('<div class="field" style="margin:0 0 4px"><label>' + (lvl ? 'Изменить права' : 'Открыть доступ') + '</label><div class="opts" id="u-lvl">' +
-      ['view', 'book', 'admin'].map(function (l) {
+      ['view', 'book', 'clean', 'admin'].map(function (l) {
         return '<button type="button" class="' + (l === lvl ? 'on' : '') + '" data-a="ulevel" data-v="' + u.uid + '" data-l="' + l + '">' + LEVELS[l] + '</button>';
-      }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Администратор — подтверждает брони и управляет людьми.</div></div>');
+      }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Клининг — видит только занятость зала (без названий) и назначает время уборки. Администратор — подтверждает брони и управляет людьми.</div></div>');
     if (lvl) {
       var spl = S.d.settings.specialists || [], cur = u.specialty || [], bossU = u.boss ? findUser(u.boss) : null;
       btns.push('<div class="field" style="margin:8px 0 4px"><label>Специалист в вашей команде</label><div class="opts" id="u-spec">' +
@@ -1376,7 +1496,7 @@ var A = {
     var st = S.d.settings, minD = st.today > st.minDate ? st.today : st.minDate, next = addDays(b.date, 7);
     while (next < minD) next = addDays(next, 7);
     closeAll();
-    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants, repeat: true });
+    openForm({ date: next, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants, repeat: true, cleaning: b.cleaning ? { req: { date: next, start: b.cleaning.req ? b.cleaning.req.start : '', end: b.cleaning.req ? b.cleaning.req.end : '' } } : null });
   },
   confirmseries: function (el) {
     var sid = el.dataset.v, t = S.d.settings.today;
@@ -1406,7 +1526,7 @@ var A = {
   edit: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     closeAll();
-    openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants });
+    openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants, cleaning: b.cleaning });
   },
   user: function (el) { openUser(el.dataset.v); },
   confirm: function (el) {
@@ -1446,6 +1566,13 @@ var A = {
     var t = el.dataset.v, ok = function () { toast('Скопировано'); haptic('success'); };
     try { navigator.clipboard.writeText(t).then(ok, function () { fallbackCopy(t); ok(); }); } catch (e) { fallbackCopy(t); ok(); }
   },
+  clok: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    var c = b.cleaning.req, busy = clBusy(c.date, toMin(c.start), toMin(c.end), b.row);
+    if (busy.length) { toast('Желаемое время пересекается: ' + busy.join(', ') + '. Назначьте другое', 'error'); openCleanForm(b.row); return; }
+    act('setCleaning', { row: b.row, csig: b.csig, accept: true }).then(function (d) { if (d) closeAll(); });
+  },
+  clset: function (el) { closeAll(); openCleanForm(el.dataset.v); },
   remind: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     act('remindTeam', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); });
