@@ -496,18 +496,39 @@ function clampDay(iso) {
   var st = S.d.settings;
   return iso < st.minDate ? st.minDate : iso > st.maxDate ? st.maxDate : iso;
 }
-function apply(d) {
+/* Последнее состояние хранится на устройстве: при следующем открытии показываем его сразу, свежие данные — в фоне */
+function cacheKey() { var u = launchUser(); return u && u.id ? 'zal_state_v1:' + P.name + ':' + u.id : ''; }
+function saveCache(d) {
+  var k = cacheKey(); if (!k || !d || !d.me) return;
+  try { var c = {}; for (var x in d) if (x !== 'notice') c[x] = d[x]; localStorage.setItem(k, JSON.stringify({ t: Date.now(), d: c })); } catch (e) {}
+}
+function readCache() {
+  var k = cacheKey(); if (!k) return null;
+  try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v && v.d && Date.now() - v.t < 14 * 864e5 ? v.d : null; } catch (e) { return null; }
+}
+function apply(d, fromCache) {
+  if (!fromCache) saveCache(d);
+  S.stale = !!fromCache;
   S.d = d; S.last = Date.now();
   if (!S.day) S.day = clampDay(d.settings.today);
   S.screen = !d.me ? 'register' : d.me.status === 'Отклонён' ? 'rejected' : (d.me.nameBad && !d.me.isAdmin) ? 'fixname' : d.me.status === 'Одобрен' ? 'app' : 'pending';
   if (S.tab === 'admin' && !(d.me && d.me.isAdmin)) S.tab = 'schedule';
-  if (d.notice) toast(d.notice);
+  if (d.notice && !fromCache) toast(d.notice);
   render(true);
 }
 function load(first) {
+  if (first && !S.d) {
+    var c = readCache();
+    if (c && c.settings) {
+      // дата «сегодня» из кэша могла устареть — до прихода свежих данных считаем по часам телефона
+      var t = new Date(), iso = t.getFullYear() + '-' + p2(t.getMonth() + 1) + '-' + p2(t.getDate());
+      if (iso > c.settings.today) c.settings.today = iso;
+      apply(c, true);
+    }
+  }
   setBusy(1);
-  return api('init').then(apply, function (e) {
-    if (first || !S.d) { S.screen = 'error'; S.err = e; render(); } else toast(e.message, 'error');
+  return api('init').then(function (d) { apply(d); }, function (e) {
+    if (!S.d) { S.screen = 'error'; S.err = e; render(); } else toast(S.stale ? 'Не удалось обновить — показаны данные с прошлого входа' : e.message, 'error');
   }).then(function () { setBusy(-1); });
 }
 function act(action, data, onErr) {
