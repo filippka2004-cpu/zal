@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
-<title>Актовый зал</title>
+<title>Открытие | Сервисы</title>
 <script>
   // ▼▼▼ Вставьте адрес веб-приложения Apps Script (заканчивается на /exec) ▼▼▼
   window.APP_CONFIG = {
@@ -128,6 +128,47 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg2)}
 .actions{display:flex;gap:8px;margin-top:12px}
 .warnbox{margin-top:8px;font-size:13px;padding:8px 10px;border-radius:10px;background:var(--danger-soft);color:var(--danger)}
 .warnbox.w{background:var(--warn-soft);color:var(--warn)}
+
+
+/* «Открытие | Сервисы» */
+.svc{display:flex;gap:14px;align-items:center;width:100%;padding:16px;background:var(--card);border-radius:18px;text-align:left}
+.svc:active{opacity:.8}
+.svc-ico{width:52px;height:52px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;font-size:26px;flex:none}
+.svc-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.svc-t{font-weight:700;font-size:18px;letter-spacing:-.01em}
+.svc-m{font-size:13px;color:var(--hint)}
+.svc.off{opacity:.55}.svc.off .svc-ico{filter:grayscale(1)}
+.svc>svg{color:var(--hint)}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bk .bar.st-new,.bk .bar.st-awaiting_review,.bk .bar.st-awaiting_detail{background:var(--warn)}
+.bk .bar.st-confirmed{background:var(--ok)}.bk .bar.st-cancelled{background:var(--hint);opacity:.5}
+.clmap{position:relative;width:100%;aspect-ratio:1684/1620;border-radius:16px;overflow:hidden;background:#f4faf7;touch-action:manipulation}
+.clmap>svg{position:absolute;inset:0;width:100%;height:100%}
+.clmap .pins{position:absolute;inset:0}
+.pin{position:absolute;transform:translate(-50%,-50%);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#fff;border:2px solid #9bbcb3;color:#2c5a52;font-size:10px;font-weight:700;display:grid;place-items:center;line-height:1}
+.pin.ok{border-color:#277d70;background:#e9f6f2}
+.pin.zone{border-style:dashed;min-width:12px;height:12px;padding:0}
+.pin.dot{min-width:13px;height:13px;padding:0;border-width:2px}
+.pin.off{opacity:.35}
+.pin.busy{background:var(--warn);border-color:var(--warn);color:#fff}
+.pin.sel{background:var(--accent);border-color:var(--accent);color:#fff;z-index:2}
+.pin i{position:absolute;top:-8px;right:-8px;min-width:15px;height:15px;border-radius:8px;background:var(--danger);color:#fff;font-style:normal;font-size:9px;line-height:15px;padding:0 3px}
+.mapnote{position:absolute;left:8px;right:8px;bottom:8px;background:var(--text);color:var(--bg);font-size:13px;border-radius:10px;padding:8px 10px;text-align:center}
+.edbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 2px 10px}
+.pill.on{background:var(--accent);color:var(--accent-text)}
+.trow{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:0}.trow b{font-weight:600}
+.link{color:var(--accent);font-weight:600;background:none;padding:0}
+.timer{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-size:15px}
+.stepper{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border-radius:12px}
+.stepper span{flex:1;font-size:14px}
+.stepper button{width:34px;height:34px;border-radius:50%;background:var(--card);font-size:20px;font-weight:600;color:var(--accent);display:grid;place-items:center}
+.stepper button[disabled]{opacity:.35}
+.stepper b{min-width:18px;text-align:center;font-size:17px}
+.roombox{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--bg2)}
+.clphoto{display:block;width:100%;max-height:360px;object-fit:contain;border-radius:12px;background:var(--bg2);margin-bottom:6px}
+details.hist{margin-top:16px;font-size:13px}details.hist summary{color:var(--accent);font-weight:600;cursor:pointer;margin-bottom:6px}
+details.hist div{padding:3px 0}
 
 /* кнопки */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border-radius:12px;background:var(--accent);color:var(--accent-text);font-weight:600;font-size:16px;text-align:center}
@@ -380,6 +421,10 @@ var I = {
   edit: '<svg class="i s" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   repeat: '<svg class="i s" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
   chat: '<svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  back: '<svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  chev: '<svg class="i s" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+  map: '<svg class="i" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  users: '<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></svg>',
 };
 
 /* ---------------- платформа (Telegram / MAX) ---------------- */
@@ -517,11 +562,13 @@ function apply(d, fromCache) {
   if (!fromCache) saveCache(d);
   S.stale = !!fromCache;
   S.d = d; S.last = Date.now();
+  if (!fromCache && d.cleaning && d.cleaning.now) S.skew = Date.parse(d.cleaning.now) - Date.now();   // часы телефона могут спешить
   if (!S.day) S.day = clampDay(d.settings.today);
   S.screen = !d.me ? 'register' : d.me.status === 'Отклонён' ? 'rejected' : (d.me.nameBad && !d.me.isAdmin) ? 'fixname' : d.me.status === 'Одобрен' ? 'app' : 'pending';
   if (S.tab === 'admin' && !(d.me && d.me.isAdmin)) S.tab = 'schedule';
   if (d.notice && !fromCache) toast(d.notice);
   render(true);
+  if (!fromCache && S.openAfter && S.screen === 'app') { var oa = S.openAfter; S.openAfter = ''; if (S.svc === 'cln') openTicket(oa); }
 }
 function load(first) {
   if (first && !S.d) {
@@ -572,7 +619,7 @@ function freeWindows(iso) {
   return out.filter(function (w) { return w[1] - w[0] >= 15; });
 }
 function mayBook() { return !!(S.d && S.d.me && S.d.me.canBook !== false); }
-var LEVELS = { admin: 'Администратор', book: 'Просмотр и бронирование', view: 'Только просмотр', clean: 'Клининг' };
+var LEVELS = { admin: 'Администратор', book: 'Просмотр и бронирование', view: 'Только просмотр', clean: 'Клининг', none: 'Нет доступа к залу' };
 function canBook(iso) { var st = S.d.settings; return mayBook() && iso >= st.today && iso >= st.minDate && iso <= st.maxDate; }
 function pendingBookings() { var t = S.d.settings.today; return bookings().filter(function (b) { return b.status === 'pending' && b.date >= t; }).sort(byStart); }
 function pendingUsers() { return ((S.d.admin && S.d.admin.users) || []).filter(function (u) { return u.status === 'Заявка'; }); }
@@ -582,7 +629,7 @@ function findUser(uid) { return ((S.d.admin && S.d.admin.users) || []).filter(fu
 /* ---------------- отрисовка ---------------- */
 function render(keepScroll) {
   var y = window.scrollY, h = '';
-  if (S.screen === 'loading') h = '<div class="center"><div class="spinner"></div><div>Загружаем расписание…</div></div>';
+  if (S.screen === 'loading') h = '<div class="center"><div class="spinner"></div><div>Загружаем…</div></div>';
   else if (S.screen === 'noplatform') h = vNoPlatform();
   else if (S.screen === 'error') h = vError();
   else if (S.screen === 'register') h = vRegister();
@@ -591,8 +638,9 @@ function render(keepScroll) {
   else if (S.screen === 'rejected') h = vRejected();
   else h = vApp();
   $('#app').innerHTML = h;
-  document.body.classList.toggle('with-tabs', S.screen === 'app');
-  document.body.classList.toggle('with-fab', S.screen === 'app' && S.tab === 'schedule' && canBook(S.day));
+  document.body.classList.toggle('with-tabs', S.screen === 'app' && S.svc !== 'home');
+  document.body.classList.toggle('with-fab', S.screen === 'app' && ((S.svc === 'hall' && S.tab === 'schedule' && canBook(S.day)) || (S.svc === 'cln' && clCanCreate() && S.clTab !== 'people' && !S.clEdit)));
+  if (!stack.length) setBack(rootBack());
   if (keepScroll) window.scrollTo(0, y);
   festOnce();
 }
@@ -754,11 +802,14 @@ function festBanner() {
 }
 
 function vApp() {
+  pickSvc();
+  if (S.svc === 'home') return vHome();
+  if (S.svc === 'cln') return vClean();
   var d = S.d, me = d.me;
   var pb = me.isAdmin ? pendingBookings().length + pendingUsers().length : 0;
   if (me.isCleaner && (!S.cleanInit || (S.tab !== 'schedule' && S.tab !== 'clean'))) { S.tab = 'clean'; S.cleanInit = true; }
   var sub = S.tab === 'schedule' ? (me.isAdmin ? 'Администратор' : esc(me.short)) : S.tab === 'mine' ? 'Мои заявки' : S.tab === 'clean' ? 'Уборка' : 'Управление';
-  var h = '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px">' +
+  var h = '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px">' + backBtn() +
     '<div class="ttl"><div class="brand" data-a="egg">Актовый зал<span class="fest" title="' + esc(festive(d.settings.today).text || '') + '">' + festive(d.settings.today).e + '</span></div><div class="sub">' + sub + '</div></div>' +
     '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button>' +
     '<button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>';
@@ -1133,6 +1184,7 @@ function vAdmin() {
         '<div class="hint small" style="margin:10px 2px 6px">Какой доступ открыть?</div>' +
         '<div class="actions" style="margin-top:0"><button class="btn sm" data-a="uapprove" data-v="' + u.uid + '" data-l="book">' + I.check + 'Бронирование</button>' +
         '<button class="btn sm sec" data-a="uapprove" data-v="' + u.uid + '" data-l="view">Только просмотр</button>' +
+        '<button class="btn sm sec" data-a="uapprove" data-v="' + u.uid + '" data-l="none" data-c="cleaner">🧹 Клининг</button>' +
         '<button class="btn sm danger" data-a="ureject" data-v="' + u.uid + '">' + I.x + 'Отклонить</button></div></div>';
     }).join('') + '</div>';
   }
@@ -1143,7 +1195,7 @@ function vAdmin() {
   }).sort(function (a, b) { return rank(a) - rank(b) || a.fio.localeCompare(b.fio, 'ru'); });
   h += '<div class="field"><input class="input" id="q" type="search" placeholder="Поиск по имени, должности, email" value="' + esc(S.q) + '"></div>';
   return h + '<div class="list list-wide">' + (people.length ? people.map(function (u) {
-    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : 'Бронирование') + (u.specialty && u.specialty.length ? ' · ' + u.specialty.join(', ').toLowerCase() : '') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
+    var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : u.level === 'none' ? 'Без зала' : u.level === 'clean' ? 'Клининг зала' : 'Бронирование') + (u.clRole === 'cleaner' ? ' · 🧹 исполнитель' : u.clRole === 'admin' ? ' · 🧹 админ' : '') + (u.specialty && u.specialty.length ? ' · ' + u.specialty.join(', ').toLowerCase() : '') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
     return '<button class="person" data-a="user" data-v="' + u.uid + '"><div class="avatar">' + esc(initials(u.fio)) + '</div><div class="body">' +
       '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + (u.nameBad && (u.tg || u.max) ? ' <span class="chip warn" style="font-size:11px;padding:1px 7px;vertical-align:1px">ник</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
@@ -1202,7 +1254,7 @@ function closeSheet() {
   var it = stack.pop(); if (!it) return;
   it.bd.classList.remove('show'); it.sh.classList.remove('show');
   setTimeout(function () { it.bd.remove(); it.sh.remove(); }, 300);
-  setBack(stack.length ? closeSheet : null);
+  setBack(stack.length ? closeSheet : rootBack());
 }
 function closeAll() { while (stack.length) closeSheet(); }
 
@@ -1223,7 +1275,7 @@ function ask(o) {
       if (done) return; done = true;
       bd.classList.remove('show'); dlg.classList.remove('show');
       setTimeout(function () { bd.remove(); wrap.remove(); }, 220);
-      setBack(stack.length ? closeSheet : null);
+      setBack(stack.length ? closeSheet : rootBack());
       resolve(v);
     };
     bd.onclick = function () { fin(null); };
@@ -1596,9 +1648,12 @@ function openUser(uid) {
     btns.push('<button class="btn danger" data-a="udelete" data-v="' + u.uid + '">Удалить из таблицы</button>');
   } else if (!u.isMe) {
     btns.push('<div class="field" style="margin:0 0 4px"><label>' + (lvl ? 'Изменить права' : 'Открыть доступ') + '</label><div class="opts" id="u-lvl">' +
-      ['view', 'book', 'clean', 'admin'].map(function (l) {
+      ['none', 'view', 'book', 'clean', 'admin'].map(function (l) {
         return '<button type="button" class="' + (l === lvl ? 'on' : '') + '" data-a="ulevel" data-v="' + u.uid + '" data-l="' + l + '">' + LEVELS[l] + '</button>';
-      }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Клининг — видит только занятость зала (без названий) и назначает время уборки. Администратор — подтверждает брони и управляет людьми.</div></div>');
+      }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Только просмотр — видит расписание, но не может бронировать. Бронирование — отправляет заявки. Клининг — видит только занятость зала (без названий) и назначает время уборки. Администратор — подтверждает брони и управляет людьми. Нет доступа — актовый зал скрыт (например, для работниц клининга).</div></div>');
+    if (lvl) btns.push('<div class="field" style="margin:8px 0 4px"><label>Клининг</label><div class="opts">' + ['employee', 'cleaner', 'admin', 'none'].map(function (r) {
+      return '<button type="button" class="' + (u.clRole === r ? 'on' : '') + '" data-a="uclrole" data-v="' + u.uid + '" data-r="' + r + '">' + CL_ROLE_RU[r] + '</button>';
+    }).join('') + '</div><div class="hint small" style="margin:6px 2px 0">Права в клининге не зависят от прав в зале.</div></div>');
     if (lvl) {
       var spl = S.d.settings.specialists || [], cur = u.specialty || [], bossU = u.boss ? findUser(u.boss) : null;
       btns.push('<div class="field" style="margin:8px 0 4px"><label>Специалист в вашей команде</label><div class="opts" id="u-spec">' +
@@ -1619,6 +1674,466 @@ function openUser(uid) {
   });
 }
 
+/* ================= «Открытие | Сервисы» ================= */
+var CL_CROP = 1620 / 2384;   // чистая схема — верхняя часть полного листа
+var CL_FLOORS = { 1: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1684 1620" aria-hidden="true"><defs><pattern id="dots1" width="42" height="42" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#cfe2dc" opacity=".55"/></pattern><filter id="shadow1" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#285f58" flood-opacity=".09"/></filter></defs><rect width="1684" height="1620" rx="44" fill="#f4faf7"/><rect width="1684" height="1620" rx="44" fill="url(#dots1)"/><circle cx="834" cy="760" r="430" fill="#dff2eb" opacity=".42"/><g filter="url(#shadow1)" fill="#fffefa" stroke="#b8d3cb" stroke-width="7" stroke-linejoin="round"><path d="M92 112h612v118h82v450H632v126H110V660H62V212h30Z"/><path d="M990 112h604v100h32v448h-52v146h-520V680H900V230h90Z"/><path d="M108 826h522v112h156v470H694v98H120v-42H64v-430h44Z"/><path d="M1054 826h520v104h52v426h-54v150H990v-98h-90V938h154Z"/><path d="M632 680h422v146h-74v612H704V826h-72Z"/></g><g fill="#eaf6f2" stroke="#c3dcd5" stroke-width="5"><path d="M260 384h372v100H414v170H260Z"/><path d="M1054 384h366v100h-212v170h-154Z"/><path d="M264 1040h366v102H410v190H264Z"/><path d="M1054 1040h366v102h-214v190h-152Z"/><rect x="704" y="710" width="276" height="220" rx="20" fill="#d9eee7"/></g><g fill="none" stroke="#d5e5e0" stroke-width="4" stroke-linecap="round"><path d="M110 230h522M110 360h150M110 486h150M110 612h150M414 230v154M520 230v154M632 230v450"/><path d="M1054 230h520M1420 230v430M1208 230v154M1315 230v154M1054 484h154M1054 610h154"/><path d="M120 958h510M120 1080h144M120 1206h144M120 1332h144M410 938v102M520 938v102M630 938v470"/><path d="M1054 958h518M1420 930v426M1206 938v102M1314 938v102M1054 1142h152M1054 1270h152"/><path d="M704 930h276M704 1055h276M704 1180h276M704 1305h276M842 930v478"/></g><g font-family="Inter,Arial,sans-serif" fill="#517a72"><g transform="translate(738 58)"><rect width="208" height="64" rx="32" fill="#fff" stroke="#c4ddd6" stroke-width="3"/><circle cx="34" cy="32" r="18" fill="#277d70"/><text x="34" y="39" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">1</text><text x="66" y="40" font-size="24" font-weight="700">этаж</text></g><text x="842" y="805" text-anchor="middle" font-size="21" font-weight="700">центральный холл</text></g></svg>', 2: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1684 1620" aria-hidden="true"><defs><pattern id="dots2" width="42" height="42" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#d7e2ee" opacity=".55"/></pattern><filter id="shadow2" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#355b73" flood-opacity=".09"/></filter></defs><rect width="1684" height="1620" rx="44" fill="#f6f9fb"/><rect width="1684" height="1620" rx="44" fill="url(#dots2)"/><circle cx="834" cy="760" r="430" fill="#e0edf4" opacity=".46"/><g filter="url(#shadow2)" fill="#fffefa" stroke="#bdd2dc" stroke-width="7" stroke-linejoin="round"><path d="M92 112h612v118h82v450H632v126H110V660H62V212h30Z"/><path d="M990 112h604v100h32v448h-52v146h-520V680H900V230h90Z"/><path d="M108 826h522v112h156v470H694v98H120v-42H64v-430h44Z"/><path d="M1054 826h520v104h52v426h-54v150H990v-98h-90V938h154Z"/><path d="M632 680h422v146h-74v612H704V826h-72Z"/></g><g fill="#edf5f8" stroke="#ccdee6" stroke-width="5"><path d="M260 384h372v100H414v170H260Z"/><path d="M1054 384h366v100h-212v170h-154Z"/><path d="M264 1040h366v102H410v190H264Z"/><path d="M1054 1040h366v102h-214v190h-152Z"/><rect x="704" y="710" width="276" height="220" rx="20" fill="#dbeaf0"/></g><g fill="none" stroke="#dae7ec" stroke-width="4" stroke-linecap="round"><path d="M110 230h522M110 360h150M110 486h150M110 612h150M414 230v154M520 230v154M632 230v450"/><path d="M1054 230h520M1420 230v430M1208 230v154M1315 230v154M1054 484h154M1054 610h154"/><path d="M120 958h510M120 1080h144M120 1206h144M120 1332h144M410 938v102M520 938v102M630 938v470"/><path d="M1054 958h518M1420 930v426M1206 938v102M1314 938v102M1054 1142h152M1054 1270h152"/><path d="M704 930h276M704 1055h276M704 1180h276M704 1305h276M842 930v478"/></g><g font-family="Inter,Arial,sans-serif" fill="#527687"><g transform="translate(738 58)"><rect width="208" height="64" rx="32" fill="#fff" stroke="#c9dce4" stroke-width="3"/><circle cx="34" cy="32" r="18" fill="#4e89a8"/><text x="34" y="39" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">2</text><text x="66" y="40" font-size="24" font-weight="700">этаж</text></g><text x="842" y="805" text-anchor="middle" font-size="21" font-weight="700">центральный холл</text></g></svg>', 3: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1684 1620" aria-hidden="true"><defs><pattern id="dots3" width="42" height="42" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#ead9cf" opacity=".58"/></pattern><filter id="shadow3" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#755243" flood-opacity=".08"/></filter></defs><rect width="1684" height="1620" rx="44" fill="#fcf8f5"/><rect width="1684" height="1620" rx="44" fill="url(#dots3)"/><circle cx="834" cy="760" r="430" fill="#f5e7df" opacity=".5"/><g filter="url(#shadow3)" fill="#fffefa" stroke="#dccac1" stroke-width="7" stroke-linejoin="round"><path d="M92 112h612v118h82v450H632v126H110V660H62V212h30Z"/><path d="M990 112h604v100h32v448h-52v146h-520V680H900V230h90Z"/><path d="M108 826h522v112h156v470H694v98H120v-42H64v-430h44Z"/><path d="M1054 826h520v104h52v426h-54v150H990v-98h-90V938h154Z"/><path d="M632 680h422v146h-74v612H704V826h-72Z"/></g><g fill="#fbf0ea" stroke="#ead8cf" stroke-width="5"><path d="M260 384h372v100H414v170H260Z"/><path d="M1054 384h366v100h-212v170h-154Z"/><path d="M264 1040h366v102H410v190H264Z"/><path d="M1054 1040h366v102h-214v190h-152Z"/><rect x="704" y="710" width="276" height="220" rx="20" fill="#f3ded4"/></g><g fill="none" stroke="#eadfd9" stroke-width="4" stroke-linecap="round"><path d="M110 230h522M110 360h150M110 486h150M110 612h150M414 230v154M520 230v154M632 230v450"/><path d="M1054 230h520M1420 230v430M1208 230v154M1315 230v154M1054 484h154M1054 610h154"/><path d="M120 958h510M120 1080h144M120 1206h144M120 1332h144M410 938v102M520 938v102M630 938v470"/><path d="M1054 958h518M1420 930v426M1206 938v102M1314 938v102M1054 1142h152M1054 1270h152"/><path d="M704 930h276M704 1055h276M704 1180h276M704 1305h276M842 930v478"/></g><g font-family="Inter,Arial,sans-serif" fill="#84685b"><g transform="translate(738 58)"><rect width="208" height="64" rx="32" fill="#fff" stroke="#e0cec5" stroke-width="3"/><circle cx="34" cy="32" r="18" fill="#d47964"/><text x="34" y="39" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">3</text><text x="66" y="40" font-size="24" font-weight="700">этаж</text></g><text x="842" y="805" text-anchor="middle" font-size="21" font-weight="700">центральный холл</text></g></svg>' };
+var CL_ROLE_RU = { employee: 'Сотрудник', cleaner: 'Исполнитель', admin: 'Администратор', none: 'Нет доступа' };
+var CL_ST_CHIP = { new: 'warn', partial: 'acc', team_ready: 'acc', in_progress: 'acc', awaiting_review: 'warn', awaiting_detail: 'warn', confirmed: 'ok', cancelled: 'mut' };
+var CL_EV_RU = { created: 'Заявка создана', accepted: 'Приняла', left: 'Отказалась', assigned: 'Назначено', need: 'Изменено число исполнителей', arrived: 'На месте',
+  finished_mine: 'Завершила свою работу', admin_fix: 'Отметка исправлена', submitted: 'Сдано на проверку', review_confirm: 'Подтверждено', review_rework: 'Переделать',
+  review_finish: 'Доделать', review_detail: 'Запрошено подробное фото', cancelled: 'Отменено' };
+
+function svcs() { var s = (S.d && S.d.services) || { hall: true, cleaning: false }; return { hall: !!s.hall, cleaning: !!s.cleaning }; }
+function bothSvcs() { var s = svcs(); return s.hall && s.cleaning; }
+function cl() { return (S.d && S.d.cleaning) || { role: 'none', rooms: [], tickets: [] }; }
+function clRole() { return cl().role; }
+function clTickets() { return cl().tickets || []; }
+function clTicket(id) { return clTickets().filter(function (t) { return t.id === id; })[0]; }
+function clRoom(id) { return (cl().rooms || []).filter(function (r) { return r.id === id; })[0]; }
+function msk(iso, withDate) {
+  if (!iso) return '';
+  try {
+    var d = new Date(iso), o = { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit', hour12: false };
+    var t = new Intl.DateTimeFormat('ru-RU', o).format(d);
+    if (!withDate) return t;
+    var day = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long' }).format(d);
+    var today = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'long' }).format(new Date());
+    return (day === today ? 'сегодня' : day) + ', ' + t;
+  } catch (e) { return iso.slice(11, 16); }
+}
+function dur(min) { min = Math.max(0, Math.round(min)); return min < 60 ? min + ' мин' : Math.floor(min / 60) + ' ч ' + p2(min % 60) + ' мин'; }
+function since(iso) { return iso ? (Date.now() + (S.skew || 0) - Date.parse(iso)) / 60000 : 0; }
+
+/* какой раздел открыть: ссылка из уведомления → раздел, иначе общий экран (если доступны оба) */
+function startParam() {
+  if (S.goRead) return S.go || '';
+  S.goRead = true;
+  var q = /[?&]go=([^&#]+)/.exec(location.search), v = '';
+  if (q) { try { v = decodeURIComponent(q[1]); } catch (e) { v = q[1]; } }
+  try { v = v || (P.tg && P.tg.initDataUnsafe && P.tg.initDataUnsafe.start_param) || ''; } catch (e) {}
+  try { v = v || (P.max && P.max.initDataUnsafe && P.max.initDataUnsafe.start_param) || ''; } catch (e) {}
+  S.go = /^(?:home|services|cleaning(?:_CLN-\d{1,7})?|auditorium(?:_[A-Za-z0-9-]{1,40})?)$/.test(v) ? v : '';
+  return S.go;
+}
+function pickSvc() {
+  var s = svcs();
+  if (S.svc === 'cln' && !s.cleaning) S.svc = '';
+  if (S.svc === 'hall' && !s.hall) S.svc = '';
+  if (S.svc === 'home' && !(s.hall && s.cleaning)) S.svc = '';
+  if (S.svc) return;
+  var go = startParam();
+  if (/^cleaning/.test(go) && s.cleaning) {
+    S.svc = 'cln';
+    var m = /^cleaning_(CLN-\d+)$/.exec(go);
+    if (m) S.openAfter = m[1];
+  } else if (/^auditorium/.test(go) && s.hall) S.svc = 'hall';
+  else S.svc = s.hall && s.cleaning ? 'home' : s.cleaning ? 'cln' : 'hall';
+}
+function rootBack() { return S.screen === 'app' && bothSvcs() && S.svc !== 'home' ? function () { goSvc('home'); } : null; }
+function goSvc(v) { S.svc = v; haptic(); closeAll(); render(); window.scrollTo(0, 0); setBack(rootBack()); }
+function backBtn() { return bothSvcs() ? '<button class="icon-btn" data-a="svc" data-v="home" aria-label="К сервисам" style="margin-left:-8px">' + I.back + '</button>' : ''; }
+
+/* --- общий экран --- */
+function vHome() {
+  var d = S.d, me = d.me, s = svcs(), c = cl(), role = c.role;
+  var hallMeta, clMeta;
+  if (s.hall) {
+    var today = dayList(d.settings.today).length;
+    hallMeta = (LEVELS[me.level] || '') + ' · ' + (today ? 'сегодня ' + plural(today, 'мероприятие', 'мероприятия', 'мероприятий') : 'сегодня свободно');
+  }
+  if (s.cleaning) {
+    var tk = clTickets();
+    if (role === 'admin') {
+      var rv = tk.filter(function (t) { return t.status === 'awaiting_review'; }).length, nw = tk.filter(function (t) { return t.status === 'new'; }).length;
+      clMeta = 'Администратор · ' + (rv ? 'на проверке: ' + rv : 'проверять нечего') + (nw ? ' · новых: ' + nw : '');
+    } else if (role === 'cleaner') {
+      var mine = tk.filter(function (t) { return t.me && t.me.st !== 'cancelled' && ['confirmed', 'cancelled'].indexOf(t.status) < 0; }).length;
+      var free = tk.filter(function (t) { return !t.me && ['new', 'partial', 'team_ready', 'in_progress'].indexOf(t.status) >= 0 && t.team.length < t.need; }).length;
+      clMeta = 'Исполнитель · ' + (mine ? 'в работе: ' + mine : 'нет задач в работе') + (free ? ' · доступно: ' + free : '');
+    } else {
+      var act = tk.filter(function (t) { return t.mine && ['confirmed', 'cancelled'].indexOf(t.status) < 0; }).length;
+      clMeta = act ? 'Ваших заявок в работе: ' + act : 'Заявка на уборку — за минуту';
+    }
+  }
+  var card = function (id, ico, title, meta, on, badge) {
+    return '<button class="svc' + (on ? '' : ' off') + '" data-a="svc" data-v="' + id + '"><span class="svc-ico">' + ico + '</span>' +
+      '<span class="svc-b"><span class="svc-t">' + title + (badge ? ' <span class="chip warn">' + badge + '</span>' : '') + '</span><span class="svc-m">' + esc(meta) + '</span></span>' + I.chev + '</button>';
+  };
+  var pb = me.isAdmin ? pendingBookings().length + pendingUsers().length : 0;
+  var rvB = role === 'admin' ? clTickets().filter(function (t) { return t.status === 'awaiting_review'; }).length : 0;
+  return '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px"><div class="ttl"><div class="brand" data-a="egg">Открытие <span class="hint" style="font-weight:500">|</span> Сервисы<span class="fest">' + festive(d.settings.today).e + '</span></div>' +
+    '<div class="sub">Гимназия №107 · ' + esc(me.short) + '</div></div>' +
+    '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button><button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>' +
+    '<main class="wrap"><div class="list" style="margin-top:6px">' +
+    card('cln', '🧹', 'Клининг', clMeta || 'Нет доступа', s.cleaning, rvB ? rvB + ' на проверке' : '') +
+    card('hall', '🎭', 'Актовый зал', hallMeta || 'Нет доступа', s.hall, pb ? pb + ' ждут' : '') +
+    '</div><p class="hint small" style="text-align:center;margin:18px 10px">Права в каждом разделе выдаются отдельно. Нужен доступ — напишите администратору.</p></main>';
+}
+
+/* --- раздел «Клининг» --- */
+function clTabs() {
+  var r = clRole();
+  if (r === 'admin') return [['all', I.list, 'Заявки'], ['map', I.map, 'Карта'], ['people', I.users, 'Люди']];
+  if (r === 'cleaner') return [['work', I.list, 'Задачи'], ['map', I.map, 'Карта'], ['hist', I.check, 'История']];
+  return [['my', I.list, 'Мои заявки'], ['map', I.map, 'Карта']];
+}
+function clCanCreate() { return clRole() === 'employee' || clRole() === 'admin'; }
+function vClean() {
+  var d = S.d, me = d.me, tabs = clTabs();
+  if (!tabs.some(function (t) { return t[0] === S.clTab; })) S.clTab = tabs[0][0];
+  var badge = function (id) {
+    var tk = clTickets();
+    if (id === 'all') return tk.filter(function (t) { return t.status === 'awaiting_review'; }).length;
+    if (id === 'work') return tk.filter(function (t) { return !t.me && t.team.length < t.need && ['new', 'partial', 'team_ready', 'in_progress'].indexOf(t.status) >= 0; }).length;
+    return 0;
+  };
+  var body = S.clTab === 'map' ? vClMap() : S.clTab === 'people' ? vClPeople() : vClList();
+  var h = '<header class="top"><div class="hdr wrap" style="padding-left:14px;padding-right:14px">' + backBtn() +
+    '<div class="ttl"><div class="brand">Клининг</div><div class="sub">' + esc(CL_ROLE_RU[clRole()] + ' · ' + me.short) + '</div></div>' +
+    '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button><button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>';
+  h += '<main class="wrap">' + body + '</main>';
+  if (clCanCreate() && S.clTab !== 'people' && !S.clEdit) h += '<div class="fab"><button class="btn" data-a="clnew">' + I.plus + 'Новая заявка</button></div>';
+  h += '<nav class="tabs"><div class="in">' + tabs.map(function (t) {
+    var b = badge(t[0]);
+    return '<button class="' + (S.clTab === t[0] ? 'on' : '') + '" data-a="cltab" data-v="' + t[0] + '">' + t[1] + t[2] + (b ? '<span class="badge">' + b + '</span>' : '') + '</button>';
+  }).join('') + '</div></nav>';
+  return h;
+}
+function clCard(t) {
+  var team = t.need > 1 || t.team.length ? '<span class="chip mut">👥 ' + t.team.length + ' из ' + t.need + '</span>' : '';
+  var my = t.me && t.me.st === 'arrived' ? '<span class="chip acc">⏱ <span data-since="' + esc(t.me.arr) + '">' + dur(since(t.me.arr)) + '</span></span>' : t.me && t.me.st === 'accepted' ? '<span class="chip acc">Вы приняли</span>' : '';
+  return '<button class="bk clk" data-a="clopen" data-v="' + t.id + '"><div class="time">' + esc(msk(t.created)) + '<small>' + esc(t.id.replace('CLN-', '№')) + '</small></div><i class="bar st-' + t.status + '"></i>' +
+    '<div class="body"><div class="t">' + esc(t.place) + (t.floor ? ' <span class="hint" style="font-weight:500">· ' + t.floor + ' эт.</span>' : '') + '</div>' +
+    '<div class="m clamp">' + esc(t.desc) + '</div><div class="chips"><span class="chip ' + CL_ST_CHIP[t.status] + '">' + esc(t.statusRu) + '</span>' + team + my +
+    (t.hasIssue ? '<span class="chip mut">📷</span>' : '') + '</div></div></button>';
+}
+function clGroup(title, list, empty) {
+  if (!list.length) return empty ? '<div class="sec-t">' + title + '</div><div class="card empty small">' + empty + '</div>' : '';
+  return '<div class="sec-t">' + title + ' · ' + list.length + '</div><div class="list">' + list.map(clCard).join('') + '</div>';
+}
+var CL_OPEN = ['new', 'partial', 'team_ready', 'in_progress'], CL_DONE = ['confirmed', 'cancelled'];
+function vClList() {
+  var r = clRole(), tk = clTickets();
+  if (r === 'cleaner') {
+    if (S.clTab === 'hist') return clGroup('Мои завершённые', tk.filter(function (t) { return t.me && (CL_DONE.indexOf(t.status) >= 0 || t.status === 'awaiting_review' || t.me.st === 'finished' || t.me.st === 'cancelled'); }), 'Здесь появятся заявки, которые вы сдали.');
+    var mine = tk.filter(function (t) { return t.me && (t.me.st === 'accepted' || t.me.st === 'arrived' || (t.status === 'awaiting_detail' && t.me.st === 'finished')) && CL_DONE.indexOf(t.status) < 0; });
+    var free = tk.filter(function (t) { return !t.me && CL_OPEN.indexOf(t.status) >= 0 && t.team.length < t.need; });
+    return clGroup('Мои задачи', mine, 'Принятых задач нет.') + clGroup('Доступные заявки', free, 'Новых заявок нет — когда появятся, бот пришлёт сообщение.');
+  }
+  if (r === 'admin') {
+    var seg = S.clSeg || 'review';
+    var groups = {
+      review: tk.filter(function (t) { return t.status === 'awaiting_review' || t.status === 'awaiting_detail'; }),
+      active: tk.filter(function (t) { return CL_OPEN.indexOf(t.status) >= 0; }),
+      all: tk,
+    };
+    var h = '<div class="seg">' + [['review', 'Проверка'], ['active', 'В работе'], ['all', 'Все']].map(function (x) {
+      var n = x[0] === 'all' ? 0 : groups[x[0]].length;
+      return '<button class="' + (seg === x[0] ? 'on' : '') + '" data-a="clseg" data-v="' + x[0] + '">' + x[1] + (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+    var list = groups[seg];
+    if (seg === 'active') {
+      var nobody = list.filter(function (t) { return !t.team.length; });
+      return h + clGroup('Никто не принял', nobody, '') + clGroup('Команда работает', list.filter(function (t) { return t.team.length; }), nobody.length ? '' : 'Активных заявок нет.');
+    }
+    return h + (list.length ? '<div class="list">' + list.map(clCard).join('') + '</div>' : '<div class="card empty"><b>' + (seg === 'review' ? 'Проверять нечего' : 'Заявок нет') + '</b>' + (seg === 'review' ? 'Когда исполнители сдадут работу, придёт сообщение.' : '') + '</div>');
+  }
+  var my = tk.filter(function (t) { return t.mine; });
+  if (!my.length) return '<div class="hero"><div class="ico soft" style="font-size:32px">🧹</div><h2>Заявок пока нет</h2><p class="hint">Пролили, насорили, нужно убрать? Отметьте место на карте или выберите из списка — исполнители получат сообщение.</p></div>';
+  return clGroup('В работе', my.filter(function (t) { return CL_DONE.indexOf(t.status) < 0; }), '') + clGroup('Завершённые', my.filter(function (t) { return CL_DONE.indexOf(t.status) >= 0; }), '');
+}
+
+/* --- карта --- */
+function clPinsHtml(floor, opts) {
+  opts = opts || {};
+  var act = {};
+  clTickets().forEach(function (t) { if (t.roomId && CL_DONE.indexOf(t.status) < 0) act[t.roomId] = (act[t.roomId] || 0) + 1; });
+  return (cl().rooms || []).filter(function (r) { return r.f === floor && isFinite(r.x) && isFinite(r.y) && (r.active || S.clEdit); }).map(function (r) {
+    var lab = r.num || (r.kind === 'Общая зона' ? '' : '');
+    return '<button class="pin' + (lab ? '' : ' dot') + (act[r.id] ? ' busy' : '') + (r.ok ? ' ok' : '') + (r.kind === 'Общая зона' ? ' zone' : '') + (r.active ? '' : ' off') + (opts.sel === r.id ? ' sel' : '') + '" style="left:' + (r.x * 100).toFixed(2) + '%;top:' + (r.y / CL_CROP * 100).toFixed(2) + '%" data-a="clpin" data-v="' + esc(r.id) + '" title="' + esc(r.title) + '">' +
+      (lab ? '<span>' + esc(lab) + '</span>' : '') + (act[r.id] ? '<i>' + act[r.id] + '</i>' : '') + '</button>';
+  }).join('');
+}
+function clMapHtml(floor, opts) {
+  return '<div class="clmap" id="clmap" data-floor="' + floor + '">' + CL_FLOORS[floor] + '<div class="pins">' + clPinsHtml(floor, opts) + '</div>' + (S.clMove ? '<div class="mapnote">Нажмите, куда перенести точку</div>' : '') + '</div>';
+}
+function floorSeg(cur, action) {
+  return '<div class="seg">' + [1, 2, 3].map(function (f) { return '<button class="' + (cur === f ? 'on' : '') + '" data-a="' + action + '" data-v="' + f + '">' + f + ' этаж</button>'; }).join('') + '</div>';
+}
+function vClMap() {
+  var f = S.clFloor || 1, admin = clRole() === 'admin';
+  var h = floorSeg(f, 'clfloor');
+  if (admin) h += '<div class="edbar"><button class="pill' + (S.clEdit ? ' on' : '') + '" data-a="cledit">✏️ Редактор ' + (S.clEdit ? 'включён' : 'выключен') + '</button>' + (S.clEdit ? '<span class="hint small">Пустое место — добавить помещение, точка — изменить</span>' : '') + '</div>';
+  h += clMapHtml(f);
+  var unv = (cl().rooms || []).filter(function (r) { return r.f === f && !r.ok && r.active; }).length;
+  h += '<div class="hint small" style="margin:8px 4px">' + (S.clEdit ? 'Серые точки — неподтверждённые: номера на них черновые. Отметьте «Проверено», когда сверите с табличкой.' :
+    (clCanCreate() ? 'Нажмите на помещение, чтобы оставить заявку. ' : '') + (unv ? 'Номера части помещений ещё уточняются.' : '')) + '</div>';
+  var q = (S.clQ || '').trim().toLowerCase();
+  h += '<div class="field" style="margin-top:6px"><input class="input" id="clq" type="search" placeholder="Поиск: номер или название" value="' + esc(S.clQ || '') + '"></div>';
+  if (q) {
+    var found = (cl().rooms || []).filter(function (r) { return (r.active || S.clEdit) && (r.num + ' ' + r.label + ' ' + r.id + ' ' + r.lm).toLowerCase().indexOf(q) >= 0; }).slice(0, 30);
+    h += '<div class="list">' + (found.length ? found.map(function (r) {
+      return '<button class="person" data-a="clpin" data-v="' + esc(r.id) + '"><div class="avatar" style="font-size:12px">' + esc(r.num || r.f + 'э') + '</div><div class="body"><div class="nm">' + esc(r.title) + '</div><div class="m">' + r.f + ' этаж' + (r.ok ? '' : ' · не проверено') + '</div></div></button>';
+    }).join('') : '<div class="card empty small">Не нашли. Можно описать место словами в заявке.</div>') + '</div>';
+  }
+  return h;
+}
+function clMapPoint(ev) {
+  var box = ev.target.closest('.clmap'); if (!box) return null;
+  var rc = box.getBoundingClientRect();
+  var x = (ev.clientX - rc.left) / rc.width, yd = (ev.clientY - rc.top) / rc.height;
+  if (x < 0 || x > 1 || yd < 0 || yd > 1) return null;
+  return { floor: +box.dataset.floor, x: Math.round(x * 1e4) / 1e4, y: Math.round(yd * CL_CROP * 1e4) / 1e4 };
+}
+
+/* --- люди (роли клининга) --- */
+function vClPeople() {
+  var q = (S.clPq || '').trim().toLowerCase();
+  var ord = { admin: 0, cleaner: 1, employee: 2, none: 3 };
+  var list = (cl().people || []).filter(function (p) { return !q || (p.fio + ' ' + p.position).toLowerCase().indexOf(q) >= 0; })
+    .sort(function (a, b) { return ord[a.role] - ord[b.role] || a.fio.localeCompare(b.fio, 'ru'); });
+  return '<div class="hint small" style="margin:2px 4px 10px">Роли клининга не меняют права в актовом зале. Новых сотрудников одобряет администратор приложения.</div>' +
+    '<div class="field"><input class="input" id="clpq" type="search" placeholder="Поиск по имени" value="' + esc(S.clPq || '') + '"></div>' +
+    '<div class="list list-wide">' + list.map(function (p) {
+      return '<button class="person" data-a="clperson" data-v="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(p.fio) + '</div>' +
+        '<div class="m">' + esc(p.position || '') + '</div></div><span class="chip ' + (p.role === 'admin' ? 'acc' : p.role === 'cleaner' ? 'ok' : p.role === 'none' ? 'mut' : 'mut') + '">' + esc(CL_ROLE_RU[p.role]) + '</span></button>';
+    }).join('') + '</div>';
+}
+function openClPerson(uid) {
+  var p = (cl().people || []).filter(function (x) { return x.uid === uid; })[0]; if (!p) return;
+  openSheet('<h3>' + esc(p.fio) + '</h3><p class="lead">' + esc(p.position || '') + '</p><div class="field"><label>Роль в клининге</label><div class="opts">' +
+    ['employee', 'cleaner', 'admin', 'none'].map(function (r) { return '<button type="button" class="' + (p.role === r ? 'on' : '') + '" data-a="clsetrole" data-v="' + p.uid + '" data-r="' + r + '">' + CL_ROLE_RU[r] + '</button>'; }).join('') + '</div>' +
+    '<div class="hint small" style="margin:8px 2px 0">Сотрудник — подаёт заявки. Исполнитель — принимает и выполняет. Администратор — видит всё, проверяет, правит карту и выдаёт роли. Нет доступа — раздел скрыт.</div></div>');
+}
+
+/* --- заявка --- */
+function clPhotoBtn(t, which, label) {
+  var k = t.id + ':' + which, src = S.clPh && S.clPh[k];
+  return src ? '<img class="clphoto" src="' + src + '" alt="' + esc(label) + '">' : '<button class="btn sm sec" data-a="clphoto" data-v="' + t.id + '" data-w="' + which + '">📷 ' + label + '</button>';
+}
+function openTicket(id) {
+  var t = clTicket(id);
+  if (!t) { openSheet('<h3>Заявка недоступна</h3><p class="lead">Её нет в вашем списке: она могла быть закрыта или относиться к другому сотруднику.</p><div class="sheet-actions"><button class="btn sec" data-a="closeall">К заявкам</button></div>'); return; }
+  var r = clRole(), me = S.d.me, mine = t.me;
+  var h = '<div class="sheet-title" data-ticket="' + t.id + '"><h3>' + esc(t.place) + '</h3></div><div class="chips" style="margin:6px 0 14px"><span class="chip ' + CL_ST_CHIP[t.status] + '">' + esc(t.statusRu) + '</span>' +
+    '<span class="chip mut">' + esc(t.id) + '</span>' + (t.need > 1 || t.team.length ? '<span class="chip mut">👥 ' + t.team.length + ' из ' + t.need + '</span>' : '') + '</div>' +
+    '<dl class="kv"><dt>Что сделать</dt><dd>' + esc(t.desc) + '</dd>' + (t.floor ? '<dt>Этаж</dt><dd>' + t.floor + '</dd>' : '') + (t.landmark ? '<dt>Ориентир</dt><dd>' + esc(t.landmark) + '</dd>' : '') +
+    '<dt>Подана</dt><dd>' + esc(msk(t.created, true)) + '</dd>' + (!t.mine || r === 'admin' ? '<dt>Автор</dt><dd>' + esc(t.author) + '</dd>' : '') +
+    (t.mine ? '<dt>Ответ</dt><dd>' + (t.notify ? 'придёт сообщение, когда работу проверят' : 'без уведомления') + '</dd>' : '') +
+    (t.review.comment && t.status !== 'confirmed' ? '<dt>Комментарий</dt><dd><b>' + esc(t.review.comment) + '</b></dd>' : '') + '</dl>';
+  if (t.hasIssue) h += '<div class="mt">' + clPhotoBtn(t, 'issue', 'Фото проблемы') + '</div>';
+  if (t.team.length) {
+    h += '<div class="sec-t" style="margin-top:16px">Команда</div><div class="card" style="background:var(--bg2);padding:4px 12px">' + t.team.map(function (a) {
+      var st = a.st === 'arrived' ? '⏱ на месте с ' + msk(a.arr) : a.st === 'finished' ? '✓ закончила ' + msk(a.fin) : a.st === 'accepted' ? 'приняла в ' + msk(a.acc) + ', в пути' : 'место закрыто';
+      return '<div class="trow"><b>' + esc(a.name) + '</b><span class="hint small">' + esc(st) + '</span>' +
+        (r === 'admin' && (a.st === 'arrived' || a.st === 'accepted') && ['in_progress', 'partial', 'team_ready'].indexOf(t.status) >= 0 ? '<button class="link small" data-a="clfix" data-v="' + t.id + '" data-u="' + a.uid + '">исправить</button>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  if (mine && mine.st === 'arrived') h += '<div class="timer">Ваш таймер: <b data-since="' + esc(mine.arr) + '">' + dur(since(mine.arr)) + '</b></div>';
+  if (r === 'admin' && t.work && t.work.length) h += '<div class="hint small" style="margin:8px 2px">Отработано: ' + t.work.map(function (w) { return esc(w.name) + ' — ' + dur(w.min) + (w.open ? ' (идёт)' : ''); }).join('; ') + '</div>';
+  if ((r === 'admin' || mine) && t.cycles) {
+    var withPh = t.cycles.filter(function (c) { return c.hasPhoto; });
+    if (withPh.length) h += '<div class="sec-t" style="margin-top:16px">Фото после уборки</div>' + withPh.slice().reverse().map(function (c) {
+      return '<div style="margin-bottom:8px">' + clPhotoBtn(t, String(c.n), (t.cycles.length > 1 ? 'Цикл ' + c.n + ' · ' : '') + 'сдано ' + msk(c.sub, true)) + (c.com ? '<div class="hint small" style="margin:4px 2px">' + esc({ rework: 'Переделать', finish: 'Доделать', detail: 'Подробное фото', confirm: 'Подтверждено' }[c.dec] || '') + ': ' + esc(c.com) + '</div>' : '') + '</div>';
+    }).join('');
+  }
+  var btns = [];
+  if (r === 'cleaner') {
+    if (!mine && CL_OPEN.indexOf(t.status) >= 0 && t.team.length < t.need) btns.push('<button class="btn" data-a="claccept" data-v="' + t.id + '">' + I.check + 'Принять' + (t.need > 1 ? ' (' + (t.team.length + 1) + ' из ' + t.need + ')' : '') + '</button>');
+    if (mine && mine.st === 'accepted' && CL_OPEN.indexOf(t.status) >= 0) {
+      btns.push('<button class="btn" data-a="clarrive" data-v="' + t.id + '">📍 На месте — запустить таймер</button>');
+      btns.push('<button class="btn ghost" data-a="clleave" data-v="' + t.id + '">Отказаться</button>');
+    }
+    if (mine && mine.st === 'arrived') {
+      var others = t.team.filter(function (a) { return a.uid !== me.uid && a.st === 'arrived'; });
+      btns.push('<button class="btn" data-a="cldone" data-v="' + t.id + '"' + (others.length ? ' disabled' : '') + '>📷 Сдать уборку с фото</button>');
+      if (others.length) btns.push('<p class="hint small" style="text-align:center;margin:0">Ещё работает: ' + esc(others.map(function (a) { return a.name; }).join(', ')) + '. Сдать сможет последний, кто остаётся.</p>');
+      else if (t.team.some(function (a) { return a.st === 'accepted'; })) btns.push('<p class="hint small" style="text-align:center;margin:0">Кто ещё в пути, не сможет начать после сдачи.</p>');
+      btns.push('<button class="btn sec" data-a="clmine" data-v="' + t.id + '">Завершить мою работу</button>');
+    }
+    if (mine && t.status === 'awaiting_detail' && mine.st === 'finished') btns.push('<button class="btn" data-a="cldone" data-v="' + t.id + '">📷 Дослать подробное фото</button>');
+  }
+  if (r === 'admin') {
+    if (t.status === 'awaiting_review') {
+      btns.push('<button class="btn" data-a="clrev" data-v="' + t.id + '" data-d="confirm">' + I.check + 'Подтвердить</button>');
+      btns.push('<div class="actions" style="margin:0"><button class="btn sm sec" data-a="clrev" data-v="' + t.id + '" data-d="rework">Переделать</button><button class="btn sm sec" data-a="clrev" data-v="' + t.id + '" data-d="finish">Доделать</button></div>');
+      btns.push('<button class="btn ghost" data-a="clrev" data-v="' + t.id + '" data-d="detail">Запросить подробное фото</button>');
+    }
+    if (CL_OPEN.indexOf(t.status) >= 0) {
+      btns.push('<button class="btn sec" data-a="classign" data-v="' + t.id + '">👤 Назначить исполнителя</button>');
+      btns.push('<div class="stepper"><span>Нужно исполнителей</span><button data-a="clneed" data-v="' + t.id + '" data-n="' + (t.need - 1) + '"' + (t.need <= Math.max(1, t.team.length) ? ' disabled' : '') + '>−</button><b>' + t.need + '</b><button data-a="clneed" data-v="' + t.id + '" data-n="' + (t.need + 1) + '"' + (t.need >= 6 ? ' disabled' : '') + '>+</button></div>');
+    }
+  }
+  if (CL_DONE.indexOf(t.status) < 0 && ((t.mine && t.status === 'new') || r === 'admin')) btns.push('<button class="btn danger" data-a="clcancel" data-v="' + t.id + '">Отменить заявку</button>');
+  if (r === 'admin' && t.ev && t.ev.length) {
+    h += '<details class="hist"><summary>История</summary>' + t.ev.slice().reverse().map(function (e) {
+      return '<div><span class="hint">' + esc(msk(e.t, true)) + '</span> · ' + esc(CL_EV_RU[e.type] || e.type) + (e.by ? ' — ' + esc(e.by) : '') + (e.who ? ' (' + esc(e.who) + ')' : '') + (e.c ? ': ' + esc(e.c) : '') + '</div>';
+    }).join('') + '</details>';
+  }
+  if (btns.length) h += '<div class="sheet-actions mt2">' + btns.join('') + '</div>';
+  openSheet(h);
+}
+function refreshTicket(id) {
+  // после ответа сервера показываем свежую карточку вместо старой
+  if (!id) return;
+  closeAll();
+  openTicket(id);
+}
+
+/* --- фото: сжимаем на телефоне до ~1280px --- */
+function pickPhoto() {
+  return new Promise(function (resolve) {
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment');
+    inp.style.display = 'none'; document.body.appendChild(inp);
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; inp.remove();
+      if (!f) return resolve(null);
+      shrinkPhoto(f).then(resolve, function () { toast('Не удалось прочитать фото', 'error'); resolve(null); });
+    };
+    inp.click();
+  });
+}
+function shrinkPhoto(file) {
+  return new Promise(function (resolve, reject) {
+    var rd = new FileReader();
+    rd.onerror = reject;
+    rd.onload = function () {
+      var img = new Image();
+      img.onerror = reject;
+      img.onload = function () {
+        var k = Math.min(1, 1280 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.78));
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(file);
+  });
+}
+
+/* --- новая заявка --- */
+function clKey() { return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function openClForm(pre) {
+  pre = pre || {};
+  var room = pre.roomId ? clRoom(pre.roomId) : null, admin = clRole() === 'admin';
+  var F = { key: clKey(), roomId: room ? room.id : '', photo: null };
+  var h = '<h3>Заявка на уборку</h3>' +
+    '<div class="field"><label>Где</label><div id="f-room">' + clRoomBox(room) + '</div></div>' +
+    '<div class="field" id="f-lmbox"' + (room ? '' : ' hidden') + '><label for="f-lm">Уточнение <span class="hint">(необязательно)</span></label><input class="input" id="f-lm" maxlength="200" placeholder="например: у окна, за шкафом"></div>' +
+    '<div class="field" id="f-nobox"' + (room ? ' hidden' : '') + '><label for="f-where">Опишите место</label><input class="input" id="f-where" maxlength="200" placeholder="например: коридор у столовой">' +
+    '<div class="opts" style="margin-top:8px" id="f-fl">' + [1, 2, 3].map(function (f) { return '<button type="button" data-v="' + f + '"' + ((S.clFloor || 1) === f ? ' class="on"' : '') + '>' + f + ' этаж</button>'; }).join('') + '</div></div>' +
+    '<div class="field"><label for="f-desc">Что нужно убрать</label><textarea class="input" id="f-desc" rows="3" maxlength="1000" placeholder="Коротко: что случилось"></textarea></div>' +
+    '<div class="field"><label>Фото <span class="hint">(по желанию)</span></label><div id="f-ph"><button type="button" class="btn sm sec" id="f-phbtn">📷 Приложить фото</button><div class="hint small" style="margin:6px 2px 0">Фото поможет понять, что брать с собой.</div></div></div>' +
+    (admin ? '<div class="stepper" style="margin-bottom:14px"><span>Нужно исполнителей</span><button type="button" id="f-nm">−</button><b id="f-n">' + (room ? room.need : 1) + '</b><button type="button" id="f-np">+</button></div>' : '') +
+    '<label class="check" style="margin:0 2px 14px"><input type="checkbox" id="f-notify" checked><span>Сообщить мне, когда уберут</span></label>' +
+    '<button class="btn" id="f-send">Отправить заявку</button>';
+  openSheet(h, function (sh) {
+    var q = function (s) { return sh.querySelector(s); };
+    var setRoom = function (r) {
+      F.roomId = r ? r.id : '';
+      q('#f-room').innerHTML = clRoomBox(r);
+      q('#f-lmbox').hidden = !r; q('#f-nobox').hidden = !!r;
+      if (admin && r) q('#f-n').textContent = r.need;
+    };
+    sh.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      if (b.id === 'f-pick') { ev.stopPropagation(); openRoomPicker(function (r) { setRoom(r); }); }
+      if (b.id === 'f-clear') { ev.stopPropagation(); setRoom(null); }
+      if (b.parentNode && b.parentNode.id === 'f-fl') { Array.prototype.forEach.call(b.parentNode.children, function (x) { x.classList.toggle('on', x === b); }); }
+      if (b.id === 'f-nm' || b.id === 'f-np') { var n = +q('#f-n').textContent + (b.id === 'f-np' ? 1 : -1); q('#f-n').textContent = Math.max(1, Math.min(6, n)); }
+      if (b.id === 'f-phbtn' || b.id === 'f-phx') {
+        ev.stopPropagation();
+        if (b.id === 'f-phx') { F.photo = null; q('#f-ph').innerHTML = '<button type="button" class="btn sm sec" id="f-phbtn">📷 Приложить фото</button>'; return; }
+        pickPhoto().then(function (src) {
+          if (!src) return;
+          F.photo = src;
+          q('#f-ph').innerHTML = '<img class="clphoto" src="' + src + '"><button type="button" class="btn sm ghost" id="f-phx">Убрать фото</button>';
+        });
+      }
+      if (b.id === 'f-send') {
+        var desc = q('#f-desc').value.trim();
+        var where = q('#f-where').value.trim();
+        if (!F.roomId && !where) { toast('Выберите помещение или опишите место', 'error'); return; }
+        if (desc.length < 3) { toast('Опишите, что нужно убрать', 'error'); q('#f-desc').focus(); return; }
+        var fl = q('#f-fl .on');
+        var data = { key: F.key, roomId: F.roomId, landmark: F.roomId ? q('#f-lm').value.trim() : where, floor: fl ? +fl.dataset.v : null, desc: desc, photo: F.photo, notify: q('#f-notify').checked };
+        if (admin) data.need = +q('#f-n').textContent;
+        b.disabled = true;
+        act('clCreate', data).then(function (d) { b.disabled = false; if (d && d.clOpen) refreshTicket(d.clOpen); });
+      }
+    });
+  });
+}
+function clRoomBox(r) {
+  return r ? '<div class="roombox"><div><b>' + esc(r.title) + '</b><div class="hint small">' + r.f + ' этаж' + (r.ok ? '' : ' · номер уточняется') + '</div></div><button type="button" class="link" id="f-pick">Изменить</button></div>' +
+    '<button type="button" class="link small" id="f-clear" style="margin:6px 2px 0">Нет в списке — опишу словами</button>'
+    : '<button type="button" class="btn sm sec" id="f-pick">' + I.map + 'Выбрать на карте или в списке</button>';
+}
+function openRoomPicker(cb) {
+  var f = S.clFloor || 1;
+  var draw = function (sh) {
+    sh.querySelector('#rp').innerHTML = floorSeg(f, 'rpfloor') + clMapHtml(f) +
+      '<div class="field" style="margin-top:10px"><input class="input" id="rpq" type="search" placeholder="Или найдите: номер, название"></div><div class="list" id="rpl"></div>';
+  };
+  openSheet('<h3>Выберите помещение</h3><div id="rp"></div>', function (sh) {
+    draw(sh);
+    sh.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-a]'); if (!b) return;
+      ev.stopPropagation(); ev.preventDefault();
+      if (b.dataset.a === 'rpfloor') { f = +b.dataset.v; draw(sh); return; }
+      if (b.dataset.a === 'clpin') { var r = clRoom(b.dataset.v); closeSheet(); if (r) cb(r); }
+    }, true);
+    sh.addEventListener('input', function (ev) {
+      if (ev.target.id !== 'rpq') return;
+      var q = ev.target.value.trim().toLowerCase();
+      sh.querySelector('#rpl').innerHTML = !q ? '' : (cl().rooms || []).filter(function (r) { return r.active && (r.num + ' ' + r.label + ' ' + r.lm).toLowerCase().indexOf(q) >= 0; }).slice(0, 20).map(function (r) {
+        return '<button class="person" data-a="clpin" data-v="' + esc(r.id) + '"><div class="avatar" style="font-size:12px">' + esc(r.num || r.f + 'э') + '</div><div class="body"><div class="nm">' + esc(r.title) + '</div><div class="m">' + r.f + ' этаж</div></div></button>';
+      }).join('');
+    });
+  });
+}
+
+/* --- редактор помещений (админ) --- */
+function openRoomEdit(r, pt) {
+  var isNew = !r;
+  r = r || { id: '', f: pt.floor, num: '', label: '', lm: '', x: pt.x, y: pt.y, ok: false, need: 1, active: true, kind: 'Помещение' };
+  var h = '<h3>' + (isNew ? 'Новое помещение' : esc(r.title)) + '</h3><p class="lead">' + r.f + ' этаж' + (r.id ? ' · ' + esc(r.id) : '') + '</p>' +
+    '<div class="two"><div class="field"><label for="e-num">Номер</label><input class="input" id="e-num" maxlength="20" value="' + esc(r.num) + '" placeholder="214"></div>' +
+    '<div class="field"><label for="e-need">Исполнителей</label><input class="input" id="e-need" type="number" min="1" max="6" value="' + r.need + '"></div></div>' +
+    '<div class="field"><label for="e-label">Название</label><input class="input" id="e-label" maxlength="80" value="' + esc(r.label) + '" placeholder="Кабинет физики"></div>' +
+    '<div class="field"><label for="e-lm">Ориентир <span class="hint">(необязательно)</span></label><input class="input" id="e-lm" maxlength="120" value="' + esc(r.lm) + '"></div>' +
+    '<label class="check" style="margin:0 2px 8px"><input type="checkbox" id="e-ok"' + (r.ok ? ' checked' : '') + '><span>Проверено — номер сверен с табличкой</span></label>' +
+    (isNew ? '' : '<label class="check" style="margin:0 2px 14px"><input type="checkbox" id="e-act"' + (r.active ? ' checked' : '') + '><span>Показывать сотрудникам</span></label>') +
+    '<div class="sheet-actions"><button class="btn" id="e-save">Сохранить</button>' + (isNew ? '' : '<button class="btn sec" id="e-move">Перенести точку</button>') + '</div>';
+  openSheet(h, function (sh) {
+    var q = function (s) { return sh.querySelector(s); };
+    q('#e-save').onclick = function () {
+      act('clRoom', { id: r.id, floor: r.f, x: r.x, y: r.y, num: q('#e-num').value.trim(), label: q('#e-label').value.trim(), landmark: q('#e-lm').value.trim(),
+        need: +q('#e-need').value || 1, ok: q('#e-ok').checked, active: q('#e-act') ? q('#e-act').checked : true }).then(function (d) { if (d) closeAll(); });
+    };
+    if (q('#e-move')) q('#e-move').onclick = function () { S.clMove = r.id; closeAll(); render(true); toast('Нажмите на схеме новое место'); };
+  });
+}
+function clMapClick(ev) {
+  var pin = ev.target.closest('[data-a="clpin"]');
+  if (S.clMove) {
+    var pt = clMapPoint(ev); if (!pt) return true;
+    var r = clRoom(S.clMove); S.clMove = '';
+    if (!r) return true;
+    act('clRoom', { id: r.id, floor: pt.floor, x: pt.x, y: pt.y, num: r.num, label: r.label, landmark: r.lm, need: r.need, ok: r.ok, active: r.active });
+    return true;
+  }
+  if (S.clEdit && !pin) { var p = clMapPoint(ev); if (p) openRoomEdit(null, p); return true; }
+  return false;
+}
+
+/* живые таймеры */
+setInterval(function () {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-since]'), function (el) { el.textContent = dur(since(el.getAttribute('data-since'))); });
+}, 20000);
+
 /* --- профиль --- */
 function openProfile() {
   var m = S.d.me, idn = S.d.identity;
@@ -1636,6 +2151,80 @@ function openProfile() {
 
 /* ---------------- действия ---------------- */
 var A = {
+  svc: function (el) { goSvc(el.dataset.v); },
+  cltab: function (el) { S.clTab = el.dataset.v; S.clMove = ''; haptic(); render(); window.scrollTo(0, 0); },
+  clseg: function (el) { S.clSeg = el.dataset.v; haptic(); render(true); },
+  clfloor: function (el) { S.clFloor = +el.dataset.v; haptic(); render(true); },
+  cledit: function () { S.clEdit = !S.clEdit; S.clMove = ''; haptic(); render(true); },
+  clnew: function () { openClForm({}); },
+  clopen: function (el) { openTicket(el.dataset.v); },
+  closeall: function () { closeAll(); },
+  clpin: function (el) {
+    var r = clRoom(el.dataset.v); if (!r) return;
+    if (S.clEdit && clRole() === 'admin') { openRoomEdit(r); return; }
+    var act = clTickets().filter(function (t) { return t.roomId === r.id && CL_DONE.indexOf(t.status) < 0; });
+    var h = '<h3>' + esc(r.title) + '</h3><p class="lead">' + r.f + ' этаж' + (r.ok ? '' : ' · номер уточняется') + (r.lm ? ' · ' + esc(r.lm) : '') + '</p>' +
+      (act.length ? '<div class="sec-t">Открытые заявки</div><div class="list">' + act.map(clCard).join('') + '</div>' : '') +
+      (clCanCreate() ? '<div class="sheet-actions mt2"><button class="btn" data-a="clnewroom" data-v="' + esc(r.id) + '">' + I.plus + 'Заявка на уборку здесь</button></div>' : '');
+    openSheet(h);
+  },
+  clnewroom: function (el) { closeAll(); openClForm({ roomId: el.dataset.v }); },
+  clphoto: function (el) {
+    var id = el.dataset.v, w = el.dataset.w;
+    el.disabled = true; el.textContent = 'Загружаем фото…';
+    api('clPhoto', { id: id, which: w }).then(function (d) {
+      S.clPh = S.clPh || {}; S.clPh[id + ':' + w] = d.clPhoto.src;
+      var img = document.createElement('img'); img.className = 'clphoto'; img.src = d.clPhoto.src; el.replaceWith(img);
+    }, function (e) { el.disabled = false; el.textContent = 'Не удалось загрузить — ещё раз'; toast(e.message, 'error'); });
+  },
+  claccept: function (el) { act('clAccept', { id: el.dataset.v }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); },
+  clarrive: function (el) { act('clArrive', { id: el.dataset.v }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); },
+  clleave: function (el) {
+    ask({ title: 'Отказаться от заявки?', text: 'Место в команде освободится для других.', ok: 'Отказаться', danger: true })
+      .then(function (r) { if (r) act('clLeave', { id: el.dataset.v }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); });
+  },
+  clmine: function (el) {
+    ask({ title: 'Завершить вашу работу?', text: 'Остановится только ваш таймер. Сдать уборку с фото сможет тот, кто остаётся.', ok: 'Завершить' })
+      .then(function (r) { if (r) act('clFinishMine', { id: el.dataset.v }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); });
+  },
+  cldone: function (el) {
+    var id = el.dataset.v;
+    pickPhoto().then(function (src) {
+      if (!src) return;
+      act('clComplete', { id: id, photo: src }).then(function (d) { if (d) refreshTicket(id); });
+    });
+  },
+  clrev: function (el) {
+    var id = el.dataset.v, dec = el.dataset.d;
+    if (dec === 'confirm') { act('clReview', { id: id, decision: dec }).then(function (d) { if (d) refreshTicket(id); }); return; }
+    var T = { rework: 'Переделать', finish: 'Доделать', detail: 'Запросить подробное фото' }[dec];
+    ask({ title: T + '?', text: dec === 'detail' ? 'Работа останется закрытой, исполнитель дошлёт снимок.' : 'Откроется новый цикл: исполнители получат сообщение и примут заявку заново.', reason: 'Комментарий для исполнителей (обязательно)', ok: T })
+      .then(function (r) {
+        if (!r) return;
+        if (!r.reason) { toast('Нужен комментарий', 'error'); return; }
+        act('clReview', { id: id, decision: dec, comment: r.reason }).then(function (d) { if (d) refreshTicket(id); });
+      });
+  },
+  classign: function (el) {
+    var id = el.dataset.v, t = clTicket(id);
+    var cleaners = (cl().people || []).filter(function (p) { return p.role === 'cleaner' && !t.team.some(function (a) { return a.uid === p.uid; }); });
+    openSheet('<h3>Назначить исполнителя</h3><p class="lead">' + esc(t.place) + '</p>' + (cleaners.length ? '<div class="list">' + cleaners.map(function (p) {
+      return '<button class="person" data-a="classign2" data-v="' + id + '" data-u="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(p.fio) + '</div></div></button>';
+    }).join('') + '</div>' : '<div class="card empty small">Свободных исполнителей нет. Роль «Исполнитель» выдаётся во вкладке «Люди».</div>'));
+  },
+  classign2: function (el) { act('clAssign', { id: el.dataset.v, uid: el.dataset.u }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); },
+  clneed: function (el) { act('clSetNeed', { id: el.dataset.v, need: +el.dataset.n }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); },
+  clfix: function (el) {
+    ask({ title: 'Исправить отметку?', text: 'Таймер исполнителя остановится (или место в пути закроется). Запись попадёт в историю.', ok: 'Исправить' })
+      .then(function (r) { if (r) act('clAdminStop', { id: el.dataset.v, uid: el.dataset.u }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); });
+  },
+  clcancel: function (el) {
+    ask({ title: 'Отменить заявку?', text: 'Исполнители получат сообщение.', reason: clRole() === 'admin' ? 'Причина (необязательно)' : '', ok: 'Отменить заявку', danger: true })
+      .then(function (r) { if (r) act('clCancel', { id: el.dataset.v, reason: r.reason }).then(function (d) { if (d) closeAll(); }); });
+  },
+  clperson: function (el) { openClPerson(el.dataset.v); },
+  clsetrole: function (el) { act('clSetRole', { uid: el.dataset.v, role: el.dataset.r }).then(function (d) { if (d) closeAll(); }); },
+  uclrole: function (el) { act('clSetRole', { uid: el.dataset.v, role: el.dataset.r }).then(function (d) { if (d) { closeAll(); openUser(el.dataset.v); } }); },
   retry: function () { S.screen = 'loading'; render(); load(true); },
   reload: function () { load(); },
   close: function () { try { P.tg.close(); } catch (e) {} },
@@ -1715,7 +2304,7 @@ var A = {
     ask({ title: b.status === 'pending' ? 'Отозвать заявку?' : 'Отменить бронь?', text: esc(humanFull(b.date) + ', ' + b.start + '–' + b.end + ' «' + b.title + '»'), ok: b.status === 'pending' ? 'Отозвать' : 'Отменить бронь', danger: true })
       .then(function (r) { if (r) act('cancelBooking', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); }); });
   },
-  uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book' }).then(function (d) { if (d) closeAll(); }); },
+  uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book', clRole: el.dataset.c || '' }).then(function (d) { if (d) closeAll(); }); },
   voting: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     ask({ title: 'Голосование на экране', text: 'Отправим заявку администратору экрана. Когда её одобрят, бот пришлёт ссылку на панель ведущего: в ней можно создать опрос или фотоконкурс и вывести его на экран зала.', ok: 'Отправить заявку' })
@@ -1825,6 +2414,9 @@ var A = {
 };
 
 document.addEventListener('click', function (ev) {
+  if (S.svc === 'cln' && ev.target.closest('.clmap') && !ev.target.closest('.sheet') && (S.clEdit || S.clMove)) {
+    if (clMapClick(ev)) { ev.preventDefault(); return; }
+  }
   var el = ev.target.closest('[data-a]');
   if (!el || !A[el.dataset.a]) return;
   ev.preventDefault();
@@ -1841,7 +2433,7 @@ document.addEventListener('focusout', function (ev) {
   var sx = 0, sy = 0, t0 = 0, on = false;
   document.addEventListener('touchstart', function (ev) {
     on = false;
-    if (S.screen !== 'app' || S.tab !== 'schedule' || ev.touches.length !== 1) return;
+    if (S.screen !== 'app' || S.svc !== 'hall' || S.tab !== 'schedule' || ev.touches.length !== 1) return;
     if (document.querySelector('.sheet, .dialog-wrap') || ev.target.closest('input,textarea,select,.side,nav.tabs')) return;
     sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; t0 = Date.now(); on = true;
   }, { passive: true });
@@ -1857,6 +2449,12 @@ document.addEventListener('focusout', function (ev) {
 })();
 document.addEventListener('input', function (ev) {
   if (ev.target.id === 'r-fio') { S.regFio = ev.target.value; clearTimeout(S.twinT); S.twinT = setTimeout(checkTwin, 900); }
+  if (ev.target.id === 'clq' || ev.target.id === 'clpq') {
+    var idq = ev.target.id; S[idq === 'clq' ? 'clQ' : 'clPq'] = ev.target.value;
+    var ps = ev.target.selectionStart;
+    render(true);
+    var qq = $('#' + idq); if (qq) { qq.focus(); try { qq.setSelectionRange(ps, ps); } catch (e) {} }
+  }
   if (ev.target.id === 'q') {
     S.q = ev.target.value;
     var pos = ev.target.selectionStart;
