@@ -897,6 +897,45 @@ function vCleaning() {
     (done.length ? '<div class="sec-t">Назначено</div>' + done.map(card).join('') : '') +
     (!list.length ? '<div class="card empty"><b>Заявок на уборку нет</b>Когда кто-то закажет уборку, придёт сообщение в бот.</div>' : '');
 }
+function openCleanRequest(row) {
+  var b = findBooking(row); if (!b) return;
+  var st = S.d.settings, has = b.cleaning && b.cleaning.req;
+  var s0 = toMin(b.start), cs = Math.max(toMin('06:00'), s0 - 40);
+  var c = has ? b.cleaning.req : { date: b.date, start: fmt(cs), end: fmt(Math.max(cs + 10, s0)) };
+  var h = '<h3>' + (has ? 'Уборка перед мероприятием' : 'Вызвать уборку') + '</h3><p class="lead">«' + esc(b.title) + '», ' + esc(humanFull(b.date) + ', ' + b.start + '–' + b.end) +
+    '. Укажите, когда удобно прийти клинингу — менеджер получит заявку и назначит точное время.' + (has && b.cleaning.set ? ' Сейчас назначено: <b>' + esc(clText(b.cleaning.set)) + '</b>.' : '') + '</p>' +
+    '<form id="crf"><div class="field"><label for="r-date">Дата</label><input class="input" type="date" id="r-date" min="' + st.today + '" max="' + b.date + '" value="' + c.date + '"></div>' +
+    '<div class="two"><div class="field"><label for="r-s">С</label><input class="input" type="time" id="r-s" step="300" value="' + c.start + '"></div>' +
+    '<div class="field"><label for="r-e">До</label><input class="input" type="time" id="r-e" step="300" value="' + c.end + '"></div></div>' +
+    '<div id="r-track"></div><div class="cl-st" id="r-st"></div>' +
+    '<div class="sheet-actions mt2"><button class="btn" type="submit" id="r-go">' + (has ? 'Сохранить и сообщить клинингу' : 'Отправить заявку клинингу') + '</button>' +
+    (has ? '<button class="btn danger" type="button" id="r-off">Уборка не нужна</button>' : '') + '</div></form>';
+  openSheet(h, function (sh) {
+    var q = function (id) { return sh.querySelector('#' + id); }, bad = false;
+    var chk = function () {
+      var d = q('r-date').value, s = toMin(q('r-s').value), e = toMin(q('r-e').value), stx = q('r-st');
+      q('r-track').innerHTML = d ? track(d, { s: s, e: e }) : '';
+      bad = !d || s == null || e == null || e <= s;
+      if (bad) { stx.className = 'cl-st bad'; stx.textContent = 'Укажите время: окончание позже начала'; }
+      else if (d === b.date && s < toMin(b.end) && e > s0) { bad = true; stx.className = 'cl-st bad'; stx.textContent = 'Уборка пересекается с самим мероприятием'; }
+      else {
+        var busy = clBusy(d, s, e, b.row, b.row);
+        stx.className = 'cl-st ' + (busy.length ? 'bad' : 'ok');
+        stx.textContent = busy.length ? 'В это время зал занят: ' + busy.join(', ') + ' — клининг подберёт другое время' : 'Зал в это время свободен';
+      }
+      q('r-go').disabled = bad;
+    };
+    ['r-date', 'r-s', 'r-e'].forEach(function (id) { q(id).addEventListener('input', chk); q(id).addEventListener('change', chk); });
+    chk();
+    q('crf').addEventListener('submit', function (ev) {
+      ev.preventDefault(); if (bad) return;
+      act('requestCleaning', { row: b.row, sig: b.sig, cleaning: { date: q('r-date').value, start: q('r-s').value, end: q('r-e').value } }).then(function (d) { if (d) closeAll(); });
+    });
+    if (q('r-off')) q('r-off').addEventListener('click', function () {
+      act('requestCleaning', { row: b.row, sig: b.sig, cleaning: null }).then(function (d) { if (d) closeAll(); });
+    });
+  });
+}
 function openCleanForm(row) {
   var b = findBooking(row); if (!b || !b.cleaning) return;
   var c = b.cleaning.set || b.cleaning.req, st = S.d.settings;
@@ -1406,6 +1445,9 @@ function openBooking(row) {
   if (me.isAdmin && b.status !== 'cancelled' && !future) {
     btns.push('<button class="btn danger" data-a="notheld" data-v="' + b.row + '">Отменить — не состоялась</button>');
   }
+  if (b.status !== 'cancelled' && future && (me.isAdmin || (b.mine && mayBook()))) {
+    btns.push('<button class="btn sec" data-a="clreq" data-v="' + b.row + '">🧹 ' + (b.cleaning ? 'Изменить уборку' : 'Вызвать уборку') + '</button>');
+  }
   if (b.status !== 'cancelled' && (me.isAdmin || (b.mine && future && mayBook()))) btns.unshift('<button class="btn sec" data-a="edit" data-v="' + b.row + '">' + I.edit + 'Изменить</button>');
   if (mayBook() && (b.mine || me.isAdmin)) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
   if (btns.length) h += '<div class="sheet-actions mt2">' + btns.join('') + '</div>';
@@ -1573,6 +1615,7 @@ var A = {
     act('setCleaning', { row: b.row, csig: b.csig, accept: true }).then(function (d) { if (d) closeAll(); });
   },
   clset: function (el) { closeAll(); openCleanForm(el.dataset.v); },
+  clreq: function (el) { closeAll(); openCleanRequest(el.dataset.v); },
   remind: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     act('remindTeam', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); });
