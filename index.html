@@ -850,7 +850,8 @@ function vMine() {
 function vAdmin() {
   var pb = pendingBookings(), pu = pendingUsers();
   var h = '<div class="seg">' +
-    segBtn('bookings', 'Брони', pb.length) + segBtn('access', 'Заявки', pu.length) + segBtn('people', 'Люди', 0) + '</div>';
+    segBtn('bookings', 'Брони', pb.length) + segBtn('access', 'Заявки', pu.length) + segBtn('people', 'Люди', 0) + segBtn('integ', 'Связи', 0) + '</div>';
+  if (S.admTab === 'integ') return h + vInteg();
   if (S.admTab === 'bookings') {
     if (!pb.length) return h + '<div class="card empty"><b>Новых заявок на бронь нет</b>Когда кто-то отправит заявку, бот пришлёт уведомление.</div>';
     serBtn.seen = {};
@@ -900,6 +901,28 @@ function serBtn(b) {
   return n > 1 ? '<div class="actions" style="margin:0 0 4px"><button class="btn sm sec" data-a="confirmseries" data-v="' + esc(b.series) + '">' + I.repeat + 'Подтвердить всю серию (' + n + ')</button></div>' : '';
 }
 serBtn.seen = {};
+function fallbackCopy(t) {
+  var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove();
+}
+function vInteg() {
+  var it = S.integ;
+  if (!it) { if (!S.integLoading) { S.integLoading = true; setTimeout(function () { A.integ(); }, 0); } return '<div class="card empty">Загружаю…</div>'; }
+  var ev = API_URL + '?action=events&key=' + it.eventsKey, ics = API_URL + '?action=ics&key=' + it.eventsKey;
+  var row = function (title, hint, url) {
+    return '<div class="card" style="margin-bottom:10px"><b>' + title + '</b><div class="hint small" style="margin:4px 0 8px">' + hint + '</div>' +
+      '<div style="font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;background:var(--bg2);border-radius:10px;padding:8px 10px">' + esc(url) + '</div>' +
+      '<div class="actions" style="margin-top:8px"><button class="btn sm sec" data-a="copy" data-v="' + esc(url) + '">Скопировать</button></div></div>';
+  };
+  return row('Расписание для школьных систем (JSON)', 'Подтверждённые и отменённые брони. Параметры: &from=ГГГГ-ММ-ДД&to=ГГГГ-ММ-ДД (по умолчанию — неделя с сегодняшнего дня). Отдайте эту ссылку только тем, кому она нужна.', ev) +
+    row('Календарь (.ics)', 'Подписка для Google Календаря, телефона и программ: месяц назад и год вперёд.', ics) +
+    '<div class="card" style="margin-bottom:10px"><b>Голосование на экране</b><div class="hint small" style="margin-top:4px">' +
+    (it.voting ? '✅ Подключено. Заявок отправлено: ' + it.votingRequests + '. Кнопку «🗳 Нужно голосование на экране» видит автор брони.'
+      : '⏳ Не подключено: в «Свойствах скрипта» нет ключа VOTING_INTEGRATION_KEY. Получите ключ у администратора голосования и вставьте его туда.') + '</div></div>' +
+    '<div class="card" style="margin-bottom:10px"><b>Уведомления о бронях</b><div class="hint small" style="margin-top:4px">' +
+    (it.webhook ? '✅ Отправляются на ' + esc(it.webhook) : 'Не настроены. Если внешней системе нужны мгновенные уведомления о создании, изменении и отмене броней — добавьте её адрес в «Свойства скрипта» как EVENTS_WEBHOOK_URL.') + '</div></div>' +
+    '<button class="btn ghost" data-a="integ" data-v="new">Сменить ключ (старые ссылки перестанут работать)</button>';
+}
 function segBtn(id, label, n) {
   return '<button class="' + (S.admTab === id ? 'on' : '') + '" data-a="admtab" data-v="' + id + '">' + label + (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
 }
@@ -1229,6 +1252,13 @@ function openBooking(row) {
   if (b.series && ser.length > 1 && future && b.status !== 'cancelled' && (me.isAdmin || (b.mine && mayBook()))) {
     btns.push('<button class="btn danger" data-a="cancelseries" data-v="' + esc(b.series) + '">Отменить всю серию (' + ser.length + ')</button>');
   }
+  if (S.d.settings.voting && b.mine && b.status !== 'cancelled' && future) {
+    var vt = b.voting;
+    if (vt && vt.status === 'approved' && vt.url) btns.push('<a class="btn" href="' + esc(vt.url) + '" target="_blank" rel="noopener" data-a="openlink">🎛 Открыть панель голосования</a>');
+    else if (vt && vt.status === 'pending') btns.push('<button class="btn ghost" disabled>🗳 Голосование: ждём решения администратора</button>');
+    else btns.push('<button class="btn sec" data-a="voting" data-v="' + b.row + '">🗳 Нужно голосование на экране</button>' +
+      (vt && vt.status === 'rejected' ? '<div class="hint small" style="text-align:center;margin-top:4px">Прошлую заявку отклонили — можно отправить снова</div>' : ''));
+  }
   if (me.isAdmin && b.status === 'confirmed' && future && (b.specs || (b.participants && b.participants.length))) {
     btns.push('<button class="btn ghost" data-a="remind" data-v="' + b.row + '">📣 Напомнить команде</button>');
   }
@@ -1378,6 +1408,23 @@ var A = {
       .then(function (r) { if (r) act('cancelBooking', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); }); });
   },
   uapprove: function (el) { act('approveUser', { uid: el.dataset.v, level: el.dataset.l || 'book' }).then(function (d) { if (d) closeAll(); }); },
+  voting: function (el) {
+    var b = findBooking(el.dataset.v); if (!b) return;
+    ask({ title: 'Голосование на экране', text: 'Отправим заявку администратору экрана. Когда её одобрят, бот пришлёт ссылку на панель ведущего: в ней можно создать опрос или фотоконкурс и вывести его на экран зала.', ok: 'Отправить заявку' })
+      .then(function (r) { if (r) act('requestVoting', { row: b.row, sig: b.sig, cbUrl: API_URL }).then(function (d) { if (d) closeAll(); }); });
+  },
+  openlink: function (el, ev) {
+    var url = el.getAttribute('href');
+    try { if (P.tg && P.tg.openLink) { P.tg.openLink(url); return; } if (P.max && P.max.openLink) { P.max.openLink(url); return; } } catch (e) {}
+    window.open(url, '_blank');
+  },
+  integ: function (el) {
+    act('integrations', { newKey: !!(el && el.dataset.v === 'new') }).then(function (d) { if (d && d.integrations) { S.integ = d.integrations; render(true); } });
+  },
+  copy: function (el) {
+    var t = el.dataset.v, ok = function () { toast('Скопировано'); haptic('success'); };
+    try { navigator.clipboard.writeText(t).then(ok, function () { fallbackCopy(t); ok(); }); } catch (e) { fallbackCopy(t); ok(); }
+  },
   remind: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     act('remindTeam', { row: b.row, sig: b.sig }).then(function (d) { if (d) closeAll(); });
