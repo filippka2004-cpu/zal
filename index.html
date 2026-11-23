@@ -91,13 +91,20 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg2)}
 .track-wrap{padding:14px 14px 10px}
 .track{position:relative;height:30px;background:var(--bg2);border-radius:8px;overflow:hidden}
 .blk{position:absolute;top:3px;bottom:3px;background:var(--accent);border-radius:5px;min-width:3px}
+.tone-cleaning{--booking-color:var(--ok)}
+.tone-rehearsal{--booking-color:#9b7ede}
+.tone-lesson{--booking-color:#2299b8}
+.tone-setup{--booking-color:#c48b39}
+.tone-other{--booking-color:var(--hint)}
+.blk[class*="tone-"]{background:var(--booking-color,var(--accent))}
 .blk.p{background:repeating-linear-gradient(135deg,var(--warn) 0 5px,transparent 5px 9px);box-shadow:inset 0 0 0 1.5px var(--warn)}
 .blk.sel{background:transparent;box-shadow:inset 0 0 0 2px var(--text);z-index:2}
 .blk.sel.bad{box-shadow:inset 0 0 0 2px var(--danger);background:var(--danger-soft)}
 .nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);z-index:3}
 .ticks{position:relative;height:16px;margin-top:5px;font-size:11px;color:var(--hint);font-variant-numeric:tabular-nums}
 .ticks span{position:absolute}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--hint);margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--hint);margin-top:8px}
+.legend [class*="tone-"] i{background:var(--booking-color,var(--accent))}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--accent);margin-right:5px;vertical-align:-1px}
 .legend i.p{background:repeating-linear-gradient(135deg,var(--warn) 0 3px,transparent 3px 5px);box-shadow:inset 0 0 0 1px var(--warn)}
 .free{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;align-items:center}
@@ -110,6 +117,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg2)}
 .bk .time{min-width:46px;font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;line-height:1.25}
 .bk .time small{display:block;color:var(--hint);font-weight:500;font-size:13px}
 .bk .bar{width:3px;border-radius:2px;background:var(--accent);flex:none}
+.bk[class*="tone-"] .bar{background:var(--booking-color,var(--accent))}
 .bk.p .bar{background:var(--warn)}
 .bk.x .bar{background:var(--hint);opacity:.5}
 .bk.x .t{text-decoration:line-through;color:var(--hint)}
@@ -599,10 +607,24 @@ function act(action, data, onErr) {
 
 /* ---------------- данные ---------------- */
 function bookings() { return (S.d && S.d.bookings) || []; }
+function scheduledBookings() {
+  var out = bookings().slice();
+  bookings().forEach(function (b) {
+    var c = b.status !== 'cancelled' && b.cleaning && b.cleaning.set;
+    if (c) out.push({ row: 'cleaning-' + b.row, cleaningFor: b.row, date: c.date, start: c.start, end: c.end,
+      status: 'confirmed', title: '🧹 Уборка зала', type: 'Уборка', anon: true });
+  });
+  return out;
+}
+function bookingTone(b) {
+  if (b.slot || b.cleaningFor || b.type === 'Уборка') return 'tone-cleaning';
+  return { 'Репетиция': 'tone-rehearsal', 'Занятие': 'tone-lesson', 'Монтаж / настройка': 'tone-setup', 'Другое': 'tone-other' }[b.type] || '';
+}
+function cleaningSignature(b) { return b.csig || [b.date, b.start, b.end].join('|'); }
 function byStart(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (toMin(a.start) || 0) - (toMin(b.start) || 0); }
-function dayList(iso) { return bookings().filter(function (b) { return b.date === iso && b.status !== 'cancelled'; }).sort(byStart); }
+function dayList(iso) { return scheduledBookings().filter(function (b) { return b.date === iso && b.status !== 'cancelled'; }).sort(byStart); }
 function overlaps(date, s, e, status, exceptRow) {
-  return bookings().filter(function (b) {
+  return scheduledBookings().filter(function (b) {
     var bs = toMin(b.start), be = toMin(b.end);
     return b.row !== exceptRow && b.date === date && b.status === status && bs != null && be != null && bs < e && be > s;
   }).sort(byStart);
@@ -612,6 +634,7 @@ function freeWindows(iso) {
   var from = ds;
   if (iso === st.today) from = Math.max(ds, Math.ceil((toMin(st.now) + 1) / 5) * 5);
   var busy = dayList(iso).map(function (b) { return [toMin(b.start), toMin(b.end)]; }).filter(function (x) { return x[0] != null && x[1] != null; })
+    .map(function (x) { return [Math.max(ds, x[0]), Math.min(de, x[1])]; }).filter(function (x) { return x[0] < x[1]; })
     .sort(function (a, b) { return a[0] - b[0]; });
   var out = [], cur = from;
   busy.forEach(function (x) { if (x[0] > cur) out.push([cur, x[0]]); cur = Math.max(cur, x[1]); });
@@ -851,7 +874,7 @@ function vSchedule() {
   var list = dayList(day);
   h += '<div class="dayhead"><h2>' + humanFull(day) + '</h2><span class="hint small">' + (list.length ? plural(list.length, 'бронь', 'брони', 'броней') : '') + '</span></div>';
   h += '<div class="card track-wrap">' + track(day) +
-    '<div class="legend"><span><i></i>Подтверждено</span><span><i class="p"></i>Ждёт подтверждения</span></div>';
+    '<div class="legend"><span><i></i>Мероприятие</span><span class="tone-rehearsal"><i></i>Репетиция</span><span class="tone-lesson"><i></i>Занятие</span><span class="tone-setup"><i></i>Монтаж</span><span class="tone-cleaning"><i></i>Уборка</span><span><i class="p"></i>Ждёт подтверждения</span></div>';
   if (canBook(day)) {
     var fw = freeWindows(day);
     h += '<div class="free"><span class="lbl">' + (fw.length ? 'Свободно:' : 'Свободного времени не осталось') + '</span>' +
@@ -869,9 +892,18 @@ function track(iso, sel) {
   var st = S.d.settings, ds = toMin(st.dayStart), de = toMin(st.dayEnd), span = de - ds;
   var pct = function (m) { return Math.max(0, Math.min(100, (m - ds) / span * 100)); };
   var h = '<div class="track">';
+  var bars = [], group = null;
   dayList(iso).forEach(function (b) {
-    var s = toMin(b.start), e = toMin(b.end); if (s == null || e == null || b.row === sel.except) return;
-    h += '<i class="blk' + (b.status === 'pending' ? ' p' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%"></i>';
+    var s = toMin(b.start), e = toMin(b.end); if (s == null || e == null || e <= s || b.row === sel.except) return;
+    if (!group || s >= group.end) group = { end: e, lanes: [] };
+    group.end = Math.max(group.end, e);
+    var lane = 0; while (lane < group.lanes.length && group.lanes[lane] > s) lane++;
+    group.lanes[lane] = e;
+    bars.push({ b: b, s: s, e: e, lane: lane, group: group });
+  });
+  bars.forEach(function (x) {
+    var step = 24 / x.group.lanes.length;
+    h += '<i class="blk ' + bookingTone(x.b) + (x.b.status === 'pending' ? ' p' : '') + '" style="left:' + pct(x.s) + '%;width:' + (pct(x.e) - pct(x.s)) + '%;top:' + (3 + x.lane * step) + 'px;bottom:' + (3 + (x.group.lanes.length - x.lane - 1) * step) + 'px"></i>';
   });
   if (sel && sel.s != null && sel.e != null && sel.e > sel.s) {
     h += '<i class="blk sel' + (sel.bad ? ' bad' : '') + '" style="left:' + pct(sel.s) + '%;width:' + (pct(sel.e) - pct(sel.s)) + '%"></i>';
@@ -887,7 +919,7 @@ function track(iso, sel) {
 
 function bkCard(b, opts) {
   opts = opts || {};
-  var cls = 'bk' + (b.status === 'pending' ? ' p' : b.status === 'cancelled' ? ' x' : '') + (b.anon ? ' anon' : '');
+  var cls = 'bk ' + bookingTone(b) + (b.status === 'pending' ? ' p' : b.status === 'cancelled' ? ' x' : '') + (b.anon ? ' anon' : '');
   var chips = [];
   if (b.status === 'pending' && !opts.noStatus) chips.push('<span class="chip warn">Ждёт подтверждения</span>');
   if (b.status === 'cancelled') chips.push('<span class="chip mut">Отменено</span>');
@@ -898,7 +930,7 @@ function bkCard(b, opts) {
   if (b.slot && b.status !== 'cancelled') chips.push(slotChip(b));
   if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
   var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
-  return '<button class="' + cls + '" data-a="bk" data-v="' + b.row + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
+  return '<button class="' + cls + '" data-a="' + (b.cleaningFor ? 'cleanbk' : 'bk') + '" data-v="' + (b.cleaningFor || b.row) + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
     '<div class="body"><div class="t">' + esc(b.title) + '</div>' + (meta ? '<div class="m">' + meta + '</div>' : '') +
     (opts.extra || '') + (chips.length ? '<div class="chips">' + chips.join('') + '</div>' : '') + '</div></button>';
 }
@@ -919,8 +951,8 @@ function clBusy(date, s, e, exceptRow, skipRow) {
   // что мешает уборке: брони (подтверждённые и ждущие) и уже назначенные уборки
   var out = [];
   bookings().forEach(function (b) {
-    if (b.status === 'cancelled' || b.date !== date) return;
-    var bs = b.row === skipRow ? null : toMin(b.start), be = toMin(b.end);
+    if (b.status === 'cancelled') return;
+    var bs = b.row === skipRow || b.date !== date ? null : toMin(b.start), be = toMin(b.end);
     if (bs != null && be != null && bs < e && be > s) out.push(b.start + '–' + b.end + (b.anon ? '' : ' «' + b.title + '»'));
     var c = b.cleaning && b.cleaning.set;
     if (c && b.row !== exceptRow && c.date === date && toMin(c.start) < e && toMin(c.end) > s) out.push('уборка ' + c.start + '–' + c.end);
@@ -933,7 +965,7 @@ function clChip(b) {
 }
 function vCleaning() {
   var t = S.d.settings.today;
-  var list = bookings().filter(function (b) { return b.cleaning && b.cleaning.req && (b.cleaning.set || b.cleaning.req).date >= t; })
+  var list = bookings().filter(function (b) { return b.status !== 'cancelled' && b.cleaning && b.cleaning.req && (b.cleaning.set || b.cleaning.req).date >= t; })
     .sort(function (a, b) { var x = (a.cleaning.set || a.cleaning.req), y = (b.cleaning.set || b.cleaning.req); return x.date < y.date ? -1 : x.date > y.date ? 1 : toMin(x.start) - toMin(y.start); });
   var wait = list.filter(function (b) { return !b.cleaning.set; }), done = list.filter(function (b) { return b.cleaning.set; });
   var slots = bookings().filter(function (b) { return b.slot && b.status !== 'cancelled' && b.date >= t && b.slot.state !== 'done'; }).sort(byStart);
@@ -991,9 +1023,10 @@ function openSlotForm(b) {
     '<div id="s-track"></div><div class="cl-st" id="s-st"></div>' +
     '<button class="btn" type="submit" id="s-go" style="margin-top:12px">' + (b ? 'Сохранить и сообщить администратору' : 'Закрыть время и вызвать клининг') + '</button></form>';
   openSheet(h, function (sh) {
-    var q = function (id) { return sh.querySelector('#' + id); }, bad = false;
+    var q = function (id) { return sh.querySelector('#' + id); }, bad = false, hasConflict = false;
     var chk = function () {
       var d = q('s-date').value, s = toMin(q('s-s').value), e = toMin(q('s-e').value), stx = q('s-st');
+      hasConflict = false;
       q('s-track').innerHTML = d ? track(d, { s: s, e: e }) : '';
       bad = !d || s == null || e == null || e <= s;
       if (bad) { stx.className = 'cl-st bad'; stx.textContent = 'Укажите время: окончание позже начала'; }
@@ -1003,10 +1036,11 @@ function openSlotForm(b) {
         var ex = b ? b.row : -1;
         var conf = overlaps(d, s, e, 'confirmed', ex), pend = overlaps(d, s, e, 'pending', ex);
         if (b) conf = conf.concat(pend);
-        bad = conf.length > 0;
+        hasConflict = conf.length > 0;
+        bad = hasConflict && !me.canOverlap;
         var lab = function (x) { return x.start + '–' + x.end + (x.anon || !me.isAdmin ? '' : ' «' + x.title + '»'); };
         stx.className = 'cl-st ' + (bad ? 'bad' : pend.length ? '' : 'ok');
-        stx.textContent = bad ? 'Зал занят: ' + conf.map(lab).join(', ') : pend.length ? 'Пересекается с заявкой ' + pend.map(lab).join(', ') + ' — она ещё не подтверждена' : 'Зал в это время свободен';
+        stx.textContent = hasConflict ? 'Зал занят: ' + conf.map(lab).join(', ') + '. Пересечение нужно согласовать с Шеломановым Ф.С..' : pend.length ? 'Пересекается с заявкой ' + pend.map(lab).join(', ') + ' — она ещё не подтверждена' : 'Зал в это время свободен';
       }
       q('s-go').disabled = bad;
     };
@@ -1014,8 +1048,9 @@ function openSlotForm(b) {
     chk();
     q('slf').addEventListener('submit', function (ev) {
       ev.preventDefault(); if (bad) return;
-      var p = b ? act('slotAnswer', { row: b.row, csig: b.csig, date: q('s-date').value, start: q('s-s').value, end: q('s-e').value })
-                : act('createCleaningSlot', { date: q('s-date').value, start: q('s-s').value, end: q('s-e').value, comment: q('s-c').value });
+      chk(); if (bad) return;
+      var p = b ? actWithOverlap('slotAnswer', { row: b.row, csig: cleaningSignature(b), date: q('s-date').value, start: q('s-s').value, end: q('s-e').value }, hasConflict)
+                : actWithOverlap('createCleaningSlot', { date: q('s-date').value, start: q('s-s').value, end: q('s-e').value, comment: q('s-c').value }, hasConflict);
       p.then(function (d) { if (d) closeAll(); });
     });
   });
@@ -1028,7 +1063,7 @@ function openSlot(b) {
     (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') + (b.requester && me.isAdmin ? '<dt>Вызвал(а)</dt><dd>' + esc(b.requester) + '</dd>' : '') + '</dl>';
   var btns = [];
   if (b.status !== 'cancelled' && sl.state !== 'done') {
-    if (me.isCleaner && future) {
+    if ((me.isCleaner || me.isAdmin) && future) {
       if (sl.state === 'wait') btns.push('<button class="btn" data-a="slotok" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>');
       if (!live) btns.push('<button class="btn sec" data-a="slotset" data-v="' + b.row + '">' + (sl.state === 'wait' ? 'Предложить другое время' : 'Изменить время') + '</button>');
     }
@@ -1113,18 +1148,20 @@ function openCleanForm(row) {
     '<div id="c-track"></div><div class="cl-st" id="c-st"></div>' +
     '<button class="btn" type="submit" id="c-go" style="margin-top:12px">Назначить и сообщить автору</button></form>';
   openSheet(h, function (sh) {
-    var q = function (id) { return sh.querySelector('#' + id); }, bad = false;
+    var q = function (id) { return sh.querySelector('#' + id); }, bad = false, hasConflict = false;
     var chk = function () {
       var d = q('c-date').value, s = toMin(q('c-s').value), e = toMin(q('c-e').value), stx = q('c-st');
+      hasConflict = false;
       q('c-track').innerHTML = d ? track(d, { s: s, e: e }) : '';
       bad = !d || s == null || e == null || e <= s;
       if (bad) { stx.className = 'cl-st bad'; stx.textContent = 'Укажите время: окончание позже начала'; }
       else if (d < st.today) { bad = true; stx.className = 'cl-st bad'; stx.textContent = 'Эта дата уже прошла'; }
       else {
         var busy = clBusy(d, s, e, b.row);
-        bad = busy.length > 0;
+        hasConflict = busy.length > 0;
+        bad = hasConflict && !S.d.me.canOverlap;
         stx.className = 'cl-st ' + (bad ? 'bad' : 'ok');
-        stx.textContent = bad ? 'Пересекается: ' + busy.join(', ') : 'Зал свободен — можно назначить';
+        stx.textContent = hasConflict ? 'Пересекается: ' + busy.join(', ') + '. Нужно согласование Шеломанова Ф.С..' : 'Зал свободен — можно назначить';
       }
       q('c-go').disabled = bad;
     };
@@ -1132,7 +1169,8 @@ function openCleanForm(row) {
     chk();
     q('clf').addEventListener('submit', function (ev) {
       ev.preventDefault(); if (bad) return;
-      act('setCleaning', { row: b.row, csig: b.csig, date: q('c-date').value, start: q('c-s').value, end: q('c-e').value }).then(function (d) { if (d) closeAll(); });
+      chk(); if (bad) return;
+      actWithOverlap('setCleaning', { row: b.row, csig: cleaningSignature(b), date: q('c-date').value, start: q('c-s').value, end: q('c-e').value }, hasConflict).then(function (d) { if (d) closeAll(); });
     });
   });
 }
@@ -1287,13 +1325,24 @@ function ask(o) {
   });
 }
 
+function actWithOverlap(action, data, conflict) {
+  if (!conflict) return act(action, data);
+  if (!S.d.me.isAdmin && ['createBooking', 'createBookings', 'editBooking'].indexOf(action) >= 0) {
+    data.requestOverlap = true;
+    return act(action, data);
+  }
+  if (!S.d.me.canOverlap) { toast('Пересечение нужно согласовать с Шеломановым Ф.С.', 'error'); return Promise.resolve(null); }
+  return ask({ title: 'Согласовать пересечение?', text: 'В это время зал уже занят. Подтвердите, что вы согласовали одновременный доступ со всеми службами. Обе записи останутся в расписании.', ok: 'Согласовано — сохранить обе' })
+    .then(function (r) { if (r) return act(action, Object.assign({}, data, { force: true })); return null; });
+}
+
 /* --- календарь месяца --- */
 var calMonth = null;
 function shortDate(iso) { return WD[wday(iso)].toLowerCase() + ' ' + +iso.slice(8) + '.' + iso.slice(5, 7); }
 function calHtml() {
   var st = S.d.settings, ym = calMonth, y = +ym.slice(0, 4), m = +ym.slice(5, 7);
   var lead = (wday(ym + '-01') + 6) % 7, days = new Date(Date.UTC(y, m, 0)).getUTCDate(), counts = {};
-  bookings().forEach(function (b) {
+  scheduledBookings().forEach(function (b) {
     if (b.status === 'cancelled' || b.date.slice(0, 7) !== ym) return;
     var c = counts[b.date] || (counts[b.date] = { c: 0, p: 0 });
     if (b.status === 'confirmed') c.c++; else c.p++;
@@ -1327,7 +1376,8 @@ function openForm(pre) {
   if (date < minDate) date = minDate;
   var fw = freeWindows(date);
   var s = pre.s != null ? pre.s : fw.length ? fw[0][0] : toMin(st.dayStart);
-  var e = pre.exact ? pre.e : Math.min(s + 60, pre.e != null ? pre.e : toMin(st.dayEnd));
+  var endLimit = pre.e != null ? pre.e : pre.s == null && fw.length ? fw[0][1] : toMin(st.dayEnd);
+  var e = pre.exact ? pre.e : Math.min(s + 60, endLimit);
   var types = st.types || [];
   var type = pre.type && types.indexOf(pre.type) >= 0 ? pre.type : (types[0] || '');
   var specList = st.specialists || ['Светорежиссёр', 'Звукорежиссёр', 'Видеооператор'], ownSpec = st.ownSpecialists || 'Свои специалисты', specSel = {};
@@ -1336,6 +1386,9 @@ function openForm(pre) {
     if (x.toLowerCase() === ownSpec.toLowerCase()) specSel[ownSpec] = true; else specSel[x] = true;
   });
   var people = (S.d.people || []).filter(function (x) { return x.uid !== me.uid; }), partSel = [];
+  var ownerPeople = [{ uid: me.uid, fio: me.fio, name: me.short }].concat(people);
+  var ownerUid = ed ? (ed.requesterUid || (ed.mine ? me.uid : '')) : me.uid;
+  if (ownerUid && !ownerPeople.some(function (x) { return x.uid === ownerUid; })) ownerPeople.push({ uid: ownerUid, fio: ed.requester || 'Прежняя привязка' });
   (pre.participants || []).forEach(function (x) { if (people.some(function (y) { return y.uid === x.uid; })) partSel.push(x.uid); });
   var until0 = addDays(date, 27) > st.maxDate ? st.maxDate : addDays(date, 27);
   var goText = ed ? (me.isAdmin ? 'Сохранить изменения' : 'Отправить изменения') : me.isAdmin ? 'Забронировать' : 'Отправить заявку';
@@ -1367,6 +1420,7 @@ function openForm(pre) {
     '<div class="cl-box" id="f-clbox"' + (pre.cleaning ? '' : ' hidden') + '><div class="row3"><div class="field" style="margin:0"><label for="f-cld">Дата</label><input class="input sm" type="date" id="f-cld"></div>' +
       '<div class="field" style="margin:0"><label for="f-cls">С</label><input class="input sm" type="time" step="300" id="f-cls"></div><div class="field" style="margin:0"><label for="f-cle">До</label><input class="input sm" type="time" step="300" id="f-cle"></div></div>' +
       '<div class="cl-st" id="f-clst"></div></div>' +
+    (me.isAdmin ? '<div class="field"><label for="f-owner">Привязать бронь к сотруднику</label><select class="input" id="f-owner"><option value="">Без привязки</option>' + ownerPeople.map(function (x) { return '<option value="' + esc(x.uid) + '"' + (x.uid === ownerUid ? ' selected' : '') + '>' + esc(x.fio) + '</option>'; }).join('') + '</select><div class="hint small">Сотрудник увидит бронь в своих заявках и получит уведомление об изменениях.</div></div>' : '') +
     '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
     '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
     '<button class="btn" type="submit" id="f-go">' + goText + '</button></form>';
@@ -1382,7 +1436,7 @@ function openForm(pre) {
       if (e <= s) return { cls: 'bad', text: 'конец раньше начала', bad: true };
       if (!(ed && me.isAdmin) && d === st.today && s < toMin(st.now)) return { cls: 'bad', text: 'время уже прошло', bad: true };
       var c = overlaps(d, s, e, 'confirmed', exRow);
-      if (c.length) return { cls: 'bad', text: 'занято ' + c[0].start + '–' + c[0].end + ' «' + c[0].title + '»', bad: true, clash: c };
+      if (c.length) return { cls: 'warn', text: 'занято ' + c[0].start + '–' + c[0].end + ' «' + c[0].title + '» — согласуйте время с Шеломановым Ф.С.', bad: !!me.isAdmin && !me.canOverlap, clash: c };
       var p = overlaps(d, s, e, 'pending', exRow);
       if (p.length) return { cls: 'warn', text: 'есть заявка ' + p[0].start + '–' + p[0].end, bad: false, pend: p };
       return { cls: 'ok', text: 'свободно', bad: false };
@@ -1425,11 +1479,12 @@ function openForm(pre) {
     var check = function () {
       var d = q('f-date').value, s = toMin(q('f-s').value), e = toMin(q('f-e').value), msg = '', cls = 'mut';
       blocked = false;
-      if (!d) msg = 'Выберите дату';
+      if (!d) { msg = 'Выберите дату'; blocked = true; }
       else if (d < minDate || d > st.maxDate) { msg = 'Дата вне учебного года или уже прошла'; cls = 'bad'; blocked = true; }
       else {
         var r = slotStatus(d, s, e);
-        if (r.bad) { cls = 'bad'; blocked = true; msg = r.clash ? 'Занято: ' + r.clash.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; ') : cap(r.text); }
+        if (r.clash) { cls = 'warn'; blocked = r.bad; msg = 'Занято: ' + r.clash.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; ') + '. ' + (me.canOverlap ? 'Сохранить пересечение можно только после вашего согласования со службами.' : 'Согласуйте время с Шеломановым Ф.С.. Заявка не разрешает вход до его подтверждения.'); }
+        else if (r.bad) { cls = 'bad'; blocked = true; msg = cap(r.text); }
         else if (r.pend) { cls = 'warn'; msg = 'На это время уже есть заявка (ждёт подтверждения): ' + r.pend.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; '); }
         else { cls = 'ok'; msg = 'Время свободно · ' + humanFull(d) + ', ' + fmt(s) + '–' + fmt(e); }
       }
@@ -1492,6 +1547,11 @@ function openForm(pre) {
     });
     if (q('f-pq')) q('f-pq').addEventListener('input', renderParts);
     q('f-r').addEventListener('input', function () { renderSpecHint(); });
+    if (q('f-owner')) q('f-owner').addEventListener('change', function () {
+      var person = ownerPeople.filter(function (x) { return x.uid === q('f-owner').value; })[0];
+      if (person) q('f-r').value = person.name || person.fio;
+      renderSpecHint();
+    });
     var clAuto = !(pre.cleaning && pre.cleaning.req);
     var clDefault = function () {
       var d = q('f-date').value, s0 = toMin(q('f-s').value);
@@ -1531,6 +1591,7 @@ function openForm(pre) {
       if (!title) { q('f-t').focus(); toast('Укажите название мероприятия', 'error'); return; }
       var base = { title: title, type: type, responsible: q('f-r').value.trim(), comment: q('f-c').value.trim(),
         specs: Object.keys(specSel).filter(function (k) { return specSel[k]; }), participants: partSel.slice() };
+      if (me.isAdmin) base.requesterUid = q('f-owner').value;
       if (q('f-cl').checked) {
         var cld = q('f-cld').value, cls = q('f-cls').value, cle = q('f-cle').value;
         if (!cld || !cls || !cle || toMin(cle) <= toMin(cls)) { haptic('error'); toast('Проверьте время уборки', 'error'); return; }
@@ -1550,9 +1611,9 @@ function openForm(pre) {
         data = Object.assign({ date: q('f-date').value, start: q('f-s').value, end: q('f-e').value }, base); first = data.date;
       }
       q('f-go').disabled = true;
-      act(action, data, function (e) {
-        if (e.code === 'CONFLICT') { q('f-status').innerHTML = '<div class="status-line bad">' + esc(e.message) + '</div>'; return true; }
-      }).then(function (d) {
+      var datesToCheck = data.items || [{ date: data.date, start: data.start, end: data.end }];
+      var conflict = datesToCheck.some(function (x) { return overlaps(x.date, toMin(x.start), toMin(x.end), 'confirmed', exRow).length > 0; });
+      actWithOverlap(action, data, conflict).then(function (d) {
         if (d) { S.day = first; S.tab = 'schedule'; closeAll(); render(); window.scrollTo(0, 0); }
         else q('f-go').disabled = false;
       });
@@ -1624,6 +1685,10 @@ function openBooking(row) {
   }
   if (b.status !== 'cancelled' && future && (me.isAdmin || (b.mine && mayBook()))) {
     btns.push('<button class="btn sec" data-a="clreq" data-v="' + b.row + '">🧹 ' + (b.cleaning ? 'Изменить уборку' : 'Вызвать уборку') + '</button>');
+  }
+  if (me.isAdmin && b.status !== 'cancelled' && b.cleaning && future) {
+    if (!b.cleaning.set) btns.push('<button class="btn sec" data-a="clok" data-v="' + b.row + '">🧹 Подтвердить уборку</button>');
+    btns.push('<button class="btn sec" data-a="clset" data-v="' + b.row + '">🧹 Изменить время уборки</button>');
   }
   if (b.status !== 'cancelled' && (me.isAdmin || (b.mine && future && mayBook()))) btns.unshift('<button class="btn sec" data-a="edit" data-v="' + b.row + '">' + I.edit + 'Изменить</button>');
   if (mayBook() && (b.mine || me.isAdmin)) btns.push('<button class="btn ghost" data-a="repeat" data-v="' + b.row + '">' + I.repeat + 'Повторить…</button>');
@@ -2279,6 +2344,12 @@ var A = {
     openForm(pre);
   },
   bk: function (el) { openBooking(el.dataset.v); },
+  cleanbk: function (el) {
+    var b = findBooking(el.dataset.v), c = b && b.cleaning && b.cleaning.set;
+    if (!c) return;
+    if (S.d.me.isAdmin || S.d.me.isCleaner) { openCleanForm(b.row); return; }
+    openSheet('<h3>🧹 Уборка зала</h3><p class="lead">' + esc(humanFull(c.date) + ', ' + c.start + '–' + c.end) + '</p><p>Время подтверждено и закрыто для бронирования. Пересечение нужно согласовать с Шеломановым Ф.С..</p>');
+  },
   edit: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     closeAll();
@@ -2288,10 +2359,7 @@ var A = {
   confirm: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     var c = overlaps(b.date, toMin(b.start), toMin(b.end), 'confirmed', b.row);
-    var go = function (force) { return act('confirmBooking', { row: b.row, sig: b.sig, force: !!force }).then(function (d) { if (d) closeAll(); }); };
-    if (!c.length) return go(false);
-    ask({ title: 'Подтвердить с пересечением?', text: 'В это время уже есть подтверждённая бронь: ' + c.map(function (x) { return esc(x.start + '–' + x.end + ' «' + x.title + '»'); }).join('; ') + '. В таблице появится отметка «КОНФЛИКТ».', ok: 'Всё равно подтвердить' })
-      .then(function (r) { if (r) go(true); });
+    actWithOverlap('confirmBooking', { row: b.row, sig: b.sig }, c.length > 0).then(function (d) { if (d) closeAll(); });
   },
   reject: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
@@ -2325,13 +2393,13 @@ var A = {
   clok: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
     var c = b.cleaning.req, busy = clBusy(c.date, toMin(c.start), toMin(c.end), b.row);
-    if (busy.length) { toast('Желаемое время пересекается: ' + busy.join(', ') + '. Назначьте другое', 'error'); openCleanForm(b.row); return; }
-    act('setCleaning', { row: b.row, csig: b.csig, accept: true }).then(function (d) { if (d) closeAll(); });
+    if (busy.length && !S.d.me.canOverlap) { toast('Желаемое время пересекается: ' + busy.join(', ') + '. Согласуйте с Шеломановым Ф.С.', 'error'); openCleanForm(b.row); return; }
+    actWithOverlap('setCleaning', { row: b.row, csig: cleaningSignature(b), accept: true }, busy.length > 0).then(function (d) { if (d) closeAll(); });
   },
   clset: function (el) { closeAll(); openCleanForm(el.dataset.v); },
   clreq: function (el) { closeAll(); openCleanRequest(el.dataset.v); },
   slotnew: function () { openSlotForm(null); },
-  slotok: function (el) { var b = findBooking(el.dataset.v); if (b) act('slotAnswer', { row: b.row, csig: b.csig, accept: true }).then(function (d) { if (d) closeAll(); }); },
+  slotok: function (el) { var b = findBooking(el.dataset.v); if (b) act('slotAnswer', { row: b.row, csig: cleaningSignature(b), accept: true }).then(function (d) { if (d) closeAll(); }); },
   slotset: function (el) { var b = findBooking(el.dataset.v); closeAll(); if (b) openSlotForm(b); },
   extend: function (el) { var b = findBooking(el.dataset.v); closeAll(); if (b) openExtend(b); },
   finish: function (el) {
