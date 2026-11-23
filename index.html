@@ -837,7 +837,7 @@ function vApp() {
     '<button class="icon-btn" data-a="reload" aria-label="Обновить">' + I.refresh + '</button>' +
     '<button class="avatar" data-a="profile" aria-label="Профиль">' + esc(initials(me.fio)) + '</button></div></header>';
   h += '<main class="wrap">' + (S.tab === 'schedule' ? vSchedule() : S.tab === 'clean' ? vCleaning() : S.tab === 'mine' ? vMine() : vAdmin()) + '</main>';
-  if (S.tab === 'schedule' && canBook(S.day)) h += '<div class="fab">' + (me.isAdmin ? '<div class="fab2"><button class="btn" data-a="new">' + I.plus + 'Забронировать</button><button class="btn sec" data-a="slotnew">🧹 Клининг</button></div>' : '<button class="btn" data-a="new">' + I.plus + 'Забронировать</button>') + '</div>';
+  if (S.tab === 'schedule' && canBook(S.day)) h += '<div class="fab">' + (me.canOverlap ? '<div class="fab2"><button class="btn" data-a="new">' + I.plus + 'Забронировать</button><button class="btn sec" data-a="slotnew">🧹 Клининг</button></div>' : '<button class="btn" data-a="new">' + I.plus + 'Забронировать</button>') + '</div>';
   h += '<nav class="tabs"><div class="in">' +
     tabBtn('schedule', I.cal, 'Расписание') + (me.isCleaner ? tabBtn('clean', I.list, 'Уборка', bookings().filter(function (b) { return (b.cleaning && b.cleaning.req && !b.cleaning.set && b.cleaning.req.date >= S.d.settings.today) || (b.slot && b.slot.state === 'wait' && b.status !== 'cancelled' && b.date >= S.d.settings.today); }).length) : tabBtn('mine', I.list, 'Мои заявки')) +
     (me.isAdmin ? tabBtn('admin', I.shield, 'Админ', pb) : '') + '</div></nav>';
@@ -928,7 +928,8 @@ function bkCard(b, opts) {
   if (b.series) chips.push('<span class="chip mut">' + I.repeat + 'Серия</span>');
   if (b.cleaning && (b.anon || b.mine || S.d.me.isAdmin)) chips.push(clChip(b));
   if (b.slot && b.status !== 'cancelled') chips.push(slotChip(b));
-  if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
+  if (b.overlapApproved) chips.push('<span class="chip ok">Пересечение согласовано</span>');
+  else if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
   var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
   return '<button class="' + cls + '" data-a="' + (b.cleaningFor ? 'cleanbk' : 'bk') + '" data-v="' + (b.cleaningFor || b.row) + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
     '<div class="body"><div class="t">' + esc(b.title) + '</div>' + (meta ? '<div class="m">' + meta + '</div>' : '') +
@@ -974,7 +975,7 @@ function vCleaning() {
     return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>' + esc(humanFull(b.date)) + ', ' + esc(b.start + '–' + b.end) + '</b>' + slotChip(b) + '</div>' +
       (b.comment ? '<div class="hint small" style="margin:6px 0 0">💬 ' + esc(b.comment) + '</div>' : '') +
       '<div class="actions" style="margin-top:10px">' + (b.slot.state === 'wait' ? '<button class="btn sm" data-a="slotok" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>' : '') +
-      (live ? '<button class="btn sm" data-a="finish" data-v="' + b.row + '">✅ Закончили раньше</button>' : '<button class="btn sm sec" data-a="slotset" data-v="' + b.row + '">' + (b.slot.state === 'wait' ? 'Другое время' : 'Изменить время') + '</button>') + '</div></div>';
+      (live ? '<button class="btn sm" data-a="finish" data-v="' + b.row + '">✅ Закончили раньше</button>' : b.slot.fixed && !S.d.me.canOverlap ? '' : '<button class="btn sm sec" data-a="slotset" data-v="' + b.row + '">' + (b.slot.state === 'wait' ? 'Другое время' : 'Изменить время') + '</button>') + '</div></div>';
   };
   var card = function (b) {
     var c = b.cleaning;
@@ -1002,11 +1003,12 @@ function isToday(b) { return b.date === S.d.settings.today; }
 function running(b) { var n = mskNow(); return isToday(b) && b.status === 'confirmed' && n >= toMin(b.start) && n < toMin(b.end); }
 function slotChip(b) {
   var s = b.slot || {};
-  return s.state === 'done' ? '<span class="chip mut">🧹 Закончили в ' + esc(s.at) + '</span>' : s.state === 'ok' ? '<span class="chip ok">🧹 Клининг подтвердил</span>' : '<span class="chip warn">🧹 Ждёт клининга</span>';
+  return s.state === 'done' ? '<span class="chip mut">🧹 Закончили в ' + esc(s.at) + '</span>' : s.fixed ? '<span class="chip ok">🧹 Уборка согласована</span>' : s.state === 'ok' ? '<span class="chip ok">🧹 Клининг подтвердил</span>' : '<span class="chip warn">🧹 Ждёт клининга</span>';
 }
 /* слот уборки: админ вызывает (b == null) или клининг переносит время (b) */
 function openSlotForm(b) {
   var st = S.d.settings, me = S.d.me;
+  if ((!b || b.slot.fixed) && !me.canOverlap) { toast('Эта кнопка доступна только Шеломанову Ф.С.', 'error'); return; }
   var date = b ? b.date : (S.day >= st.today ? S.day : st.today);
   var s0 = b ? b.start : '', e0 = b ? b.end : '';
   if (!b) {
@@ -1015,7 +1017,7 @@ function openSlotForm(b) {
   }
   var h = '<h3>' + (b ? 'Другое время уборки' : '🧹 Вызвать клининг') + '</h3><p class="lead">' +
     (b ? 'Администратор вызвал на ' + esc(shortDate(b.date) + ', ' + b.start + '–' + b.end) + '. Укажите, когда вы сможете — время в расписании обновится, администратор получит сообщение.'
-       : 'Время сразу закроется для всех. Менеджер по клинингу получит сообщение и подтвердит или предложит своё время.') + '</p>' +
+       : 'Уборка уже согласована вами. Время сразу закроется в расписании, менеджер по клинингу получит уведомление без запроса подтверждения.') + '</p>' +
     '<form id="slf"><div class="field"><label for="s-date">Дата</label><input class="input" type="date" id="s-date" min="' + st.today + '" value="' + date + '"></div>' +
     '<div class="two"><div class="field"><label for="s-s">С</label><input class="input" type="time" id="s-s" step="300" value="' + s0 + '"></div>' +
     '<div class="field"><label for="s-e">До</label><input class="input" type="time" id="s-e" step="300" value="' + e0 + '"></div></div>' +
@@ -1040,7 +1042,7 @@ function openSlotForm(b) {
         bad = hasConflict && !me.canOverlap;
         var lab = function (x) { return x.start + '–' + x.end + (x.anon || !me.isAdmin ? '' : ' «' + x.title + '»'); };
         stx.className = 'cl-st ' + (bad ? 'bad' : pend.length ? '' : 'ok');
-        stx.textContent = hasConflict ? 'Зал занят: ' + conf.map(lab).join(', ') + '. Пересечение нужно согласовать с Шеломановым Ф.С..' : pend.length ? 'Пересекается с заявкой ' + pend.map(lab).join(', ') + ' — она ещё не подтверждена' : 'Зал в это время свободен';
+        stx.textContent = hasConflict ? 'Зал занят: ' + conf.map(lab).join(', ') + '. Пересечение нужно согласовать с Шеломановым Ф.С.' : pend.length ? 'Пересекается с заявкой ' + pend.map(lab).join(', ') + ' — она ещё не подтверждена' : 'Зал в это время свободен';
       }
       q('s-go').disabled = bad;
     };
@@ -1063,7 +1065,7 @@ function openSlot(b) {
     (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') + (b.requester && me.isAdmin ? '<dt>Вызвал(а)</dt><dd>' + esc(b.requester) + '</dd>' : '') + '</dl>';
   var btns = [];
   if (b.status !== 'cancelled' && sl.state !== 'done') {
-    if ((me.isCleaner || me.isAdmin) && future) {
+    if ((me.isCleaner || me.isAdmin) && future && (!sl.fixed || me.canOverlap)) {
       if (sl.state === 'wait') btns.push('<button class="btn" data-a="slotok" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>');
       if (!live) btns.push('<button class="btn sec" data-a="slotset" data-v="' + b.row + '">' + (sl.state === 'wait' ? 'Предложить другое время' : 'Изменить время') + '</button>');
     }
@@ -1161,7 +1163,7 @@ function openCleanForm(row) {
         hasConflict = busy.length > 0;
         bad = hasConflict && !S.d.me.canOverlap;
         stx.className = 'cl-st ' + (bad ? 'bad' : 'ok');
-        stx.textContent = hasConflict ? 'Пересекается: ' + busy.join(', ') + '. Нужно согласование Шеломанова Ф.С..' : 'Зал свободен — можно назначить';
+        stx.textContent = hasConflict ? 'Пересекается: ' + busy.join(', ') + '. Нужно согласование Шеломанова Ф.С.' : 'Зал свободен — можно назначить';
       }
       q('c-go').disabled = bad;
     };
@@ -1483,7 +1485,7 @@ function openForm(pre) {
       else if (d < minDate || d > st.maxDate) { msg = 'Дата вне учебного года или уже прошла'; cls = 'bad'; blocked = true; }
       else {
         var r = slotStatus(d, s, e);
-        if (r.clash) { cls = 'warn'; blocked = r.bad; msg = 'Занято: ' + r.clash.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; ') + '. ' + (me.canOverlap ? 'Сохранить пересечение можно только после вашего согласования со службами.' : 'Согласуйте время с Шеломановым Ф.С.. Заявка не разрешает вход до его подтверждения.'); }
+        if (r.clash) { cls = 'warn'; blocked = r.bad; msg = 'Занято: ' + r.clash.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; ') + '. ' + (me.canOverlap ? 'Сохранить пересечение можно только после вашего согласования со службами.' : 'Согласуйте время с Шеломановым Ф.С. Заявка не разрешает вход до его подтверждения.'); }
         else if (r.bad) { cls = 'bad'; blocked = true; msg = cap(r.text); }
         else if (r.pend) { cls = 'warn'; msg = 'На это время уже есть заявка (ждёт подтверждения): ' + r.pend.map(function (x) { return x.start + '–' + x.end + ' «' + esc(x.title) + '»'; }).join('; '); }
         else { cls = 'ok'; msg = 'Время свободно · ' + humanFull(d) + ', ' + fmt(s) + '–' + fmt(e); }
@@ -1642,7 +1644,7 @@ function openBooking(row) {
   var stChip = b.status === 'confirmed' ? '<span class="chip ok">Подтверждено</span>' : b.status === 'pending' ? '<span class="chip warn">Ждёт подтверждения</span>' : '<span class="chip mut">Отменено</span>';
   var h = '<h3>' + esc(b.title) + '</h3><div class="chips" style="margin:6px 0 16px">' + stChip + (b.mine ? '<span class="chip acc">Моя</span>' : '') +
     (b.series ? '<span class="chip mut">' + I.repeat + 'Серия</span>' : '') + (!future && b.status !== 'cancelled' ? '<span class="chip mut">Прошла</span>' : '') +
-    (b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
+    (b.overlapApproved ? '<span class="chip ok">Пересечение согласовано</span>' : b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
     (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
     (b.neededAs && b.neededAs.length ? '<dt>Вы нужны</dt><dd><b>' + esc(cap(b.neededAs.join(', ').toLowerCase())) + '</b></dd>' : '') +
@@ -2348,7 +2350,7 @@ var A = {
     var b = findBooking(el.dataset.v), c = b && b.cleaning && b.cleaning.set;
     if (!c) return;
     if (S.d.me.isAdmin || S.d.me.isCleaner) { openCleanForm(b.row); return; }
-    openSheet('<h3>🧹 Уборка зала</h3><p class="lead">' + esc(humanFull(c.date) + ', ' + c.start + '–' + c.end) + '</p><p>Время подтверждено и закрыто для бронирования. Пересечение нужно согласовать с Шеломановым Ф.С..</p>');
+    openSheet('<h3>🧹 Уборка зала</h3><p class="lead">' + esc(humanFull(c.date) + ', ' + c.start + '–' + c.end) + '</p><p>Время подтверждено и закрыто для бронирования. Пересечение нужно согласовать с Шеломановым Ф.С.</p>');
   },
   edit: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
