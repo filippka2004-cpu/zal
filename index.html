@@ -732,14 +732,17 @@ function checkTwin() {
 }
 /* --- проверка ФИО (как на сервере) --- */
 function niceFio(v) {
-  return String(v || '').replace(/[\s\u00a0]+/g, ' ').trim().split(' ').map(function (w) {
+  var p = String(v || '').replace(/[\s\u00a0]+/g, ' ').trim().split(' ').map(function (w) {
     return w.split('-').map(function (p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('-');
-  }).join(' ');
+  });
+  if (p.length === 3 && /(?:овна|евна|ична|инична|ович|евич|ич)$/i.test(p[1]) && !/(?:овна|евна|ична|инична|ович|евич|ич)$/i.test(p[2])) return [p[2], p[0], p[1]].join(' ');
+  return p.join(' ');
 }
 function fioProblem(v) {
   var w = niceFio(v).split(' ').filter(Boolean);
   if (w.length < 2) return 'Укажите фамилию и имя (можно с отчеством), например: Иванова Мария Сергеевна';
   if (w.length > 4) return 'Слишком много слов — нужны только фамилия, имя и отчество';
+  if (w.length === 2 && /(?:овна|евна|ична|инична)$/i.test(w[1])) return 'Не указана фамилия. Напишите Фамилия Имя Отчество полностью';
   for (var i = 0; i < w.length; i++) {
     if (!/^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?$/.test(w[i])) return 'Напишите фамилию и имя русскими буквами, без цифр, ников и смайликов';
     if (w[i].replace('-', '').length < 2) return 'Фамилия и имя должны быть полными, не инициалами';
@@ -748,9 +751,17 @@ function fioProblem(v) {
   if (lw.some(function (x, i) { return lw.indexOf(x) !== i; })) return 'Похоже на ник: слова повторяются. Укажите настоящие фамилию и имя';
   return '';
 }
+function personName(v) {
+  var raw = String(v || '').trim();
+  if (/^(?:без привязки|прежняя привязка|старая запись)$/i.test(raw)) return raw;
+  if (/^[А-ЯЁа-яё-]+\s+(?:[А-ЯЁа-яё]\.\s*){1,2}$/.test(raw)) return raw.replace(/([А-ЯЁа-яё])\s*\./g, function (_, c) { return c.toUpperCase() + '.'; }).replace(/\.\s+(?=[А-ЯЁ]\.)/g, '.');
+  if (fioProblem(raw)) return raw;
+  var p = niceFio(raw).split(' ');
+  return p[0] + ' ' + p.slice(1, 3).map(function (x) { return x.charAt(0).toUpperCase() + '.'; }).join('');
+}
 function vFixName() {
   var m = S.d.me;
-  return '<div class="wrap">' + hero(I.user || I.logo, 'warn', 'Укажите настоящее ФИО', 'Сейчас в приложении записано «' + esc(m.fio) + '». Чтобы коллеги и администратор понимали, кто бронирует зал, напишите фамилию и имя (можно с отчеством).') +
+  return '<div class="wrap">' + hero(I.user || I.logo, 'warn', 'Укажите полное ФИО', 'Сейчас в приложении записано «' + esc(personName(m.fio)) + '». ' + esc(m.nameIssue || 'Укажите фамилию и имя (можно с отчеством).') + ' В списках будет отображаться фамилия с инициалами.') +
     '<form id="fixf" class="card" autocomplete="on"><div class="field"><label for="fx-fio">Фамилия Имя Отчество</label>' +
     '<input class="input" id="fx-fio" name="name" autocomplete="name" placeholder="Иванова Мария Сергеевна" value=""></div>' +
     '<div id="fx-err" class="hint small" style="color:var(--danger);margin:-6px 2px 10px"></div>' +
@@ -761,7 +772,7 @@ function vPending() {
   var m = S.d.me;
   var canAsk = P.tg && P.tg.initDataUnsafe && P.tg.initDataUnsafe.user && P.tg.initDataUnsafe.user.allows_write_to_pm === false && P.tg.requestWriteAccess;
   return '<div class="wrap">' + hero(I.clock, 'warn', 'Заявка отправлена', 'Администратор проверит её и откроет доступ. Бот пришлёт сообщение, когда это произойдёт.') +
-    '<div class="card"><dl class="kv"><dt>ФИО</dt><dd>' + esc(m.fio) + '</dd><dt>Должность</dt><dd>' + esc(m.position || '—') + '</dd>' +
+    '<div class="card"><dl class="kv"><dt>ФИО</dt><dd>' + esc(personName(m.fio)) + '</dd><dt>Должность</dt><dd>' + esc(m.position || '—') + '</dd>' +
     (m.email ? '<dt>Email</dt><dd>' + esc(m.email) + '</dd>' : '') + '</dl></div>' +
     '<div class="mt2"><button class="btn sec" data-a="reload">Проверить статус</button></div>' +
     (canAsk ? '<div class="mt"><button class="btn ghost" data-a="allowpm">Разрешить сообщения от бота</button></div>' : '') + '</div>';
@@ -930,7 +941,7 @@ function bkCard(b, opts) {
   if (b.slot && b.status !== 'cancelled') chips.push(slotChip(b));
   if (b.overlapApproved) chips.push('<span class="chip ok">Пересечение согласовано</span>');
   else if (b.check === 'КОНФЛИКТ') chips.push('<span class="chip danger">Конфликт</span>');
-  var meta = [b.resp, b.type].filter(Boolean).map(esc).join(' · ');
+  var meta = [personName(b.resp), b.type].filter(Boolean).map(esc).join(' · ');
   return '<button class="' + cls + '" data-a="' + (b.cleaningFor ? 'cleanbk' : 'bk') + '" data-v="' + (b.cleaningFor || b.row) + '"><div class="time">' + esc(b.start) + '<small>' + esc(b.end) + '</small></div><i class="bar"></i>' +
     '<div class="body"><div class="t">' + esc(b.title) + '</div>' + (meta ? '<div class="m">' + meta + '</div>' : '') +
     (opts.extra || '') + (chips.length ? '<div class="chips">' + chips.join('') + '</div>' : '') + '</div></button>';
@@ -1062,7 +1073,7 @@ function openSlot(b) {
   var h = '<h3>🧹 Уборка зала</h3><div class="chips" style="margin:6px 0 14px">' + slotChip(b) + '</div>' +
     '<dl class="kv" style="margin:0 0 16px"><dt>Когда</dt><dd>' + esc(humanFull(b.date) + ', ' + b.start + '–' + b.end) + '</dd>' +
     (sl.state === 'done' ? '<dt>Было до</dt><dd>' + esc(sl.was) + '</dd>' : '') +
-    (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') + (b.requester && me.isAdmin ? '<dt>Вызвал(а)</dt><dd>' + esc(b.requester) + '</dd>' : '') + '</dl>';
+    (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') + (b.requester && me.isAdmin ? '<dt>Вызвал(а)</dt><dd>' + esc(personName(b.requester)) + '</dd>' : '') + '</dl>';
   var btns = [];
   if (b.status !== 'cancelled' && sl.state !== 'done') {
     if ((me.isCleaner || me.isAdmin) && future && (!sl.fixed || me.canOverlap)) {
@@ -1206,7 +1217,7 @@ function vAdmin() {
       var c = overlaps(b.date, s, e, 'confirmed', b.row), p = overlaps(b.date, s, e, 'pending', b.row);
       if (c.length) extra += '<div class="warnbox">Пересекается с подтверждённой: ' + c.map(function (x) { return esc(x.start + '–' + x.end + ' «' + x.title + '»'); }).join('; ') + '</div>';
       else if (p.length) extra += '<div class="warnbox w">Есть другая заявка на это время: ' + p.map(function (x) { return esc(x.start + '–' + x.end + ' «' + x.title + '»'); }).join('; ') + '</div>';
-      if (b.requester) extra += '<div class="m">От: ' + esc(b.requester) + '</div>';
+      if (b.requester) extra += '<div class="m">От: ' + esc(personName(b.requester)) + '</div>';
       if (b.specs) extra += '<div class="m">🎛 ' + esc(cap(b.specs)) + '</div>';
       if (b.comment) extra += '<div class="m">💬 ' + esc(b.comment) + '</div>';
       return '<div>' + bkCard(b, { extra: extra, showMine: false, noStatus: true }) +
@@ -1218,7 +1229,7 @@ function vAdmin() {
     if (!pu.length) return h + '<div class="card empty"><b>Новых заявок на доступ нет</b>Ссылку на бота можно отправить коллегам — они зарегистрируются сами.</div>';
     return h + '<div class="list list-wide">' + pu.map(function (u) {
       return '<div class="card"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">' + esc(initials(u.fio)) + '</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(u.fio) + '</div><div class="hint small">' + esc(u.position || '—') + '</div></div></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(personName(u.fio)) + '</div><div class="hint small">' + esc(u.position || '—') + '</div></div></div>' +
         '<dl class="kv mt">' + (u.tg ? '<dt>Telegram</dt><dd>' + esc(u.tg) + '</dd>' : '') + (u.max ? '<dt>MAX</dt><dd>' + esc(u.max) + '</dd>' : '') +
         (u.email ? '<dt>Email</dt><dd>' + esc(u.email) + '</dd>' : '') + (u.requested ? '<dt>Заявка</dt><dd>' + esc(u.requested) + '</dd>' : '') + '</dl>' +
         '<div class="hint small" style="margin:10px 2px 6px">Какой доступ открыть?</div>' +
@@ -1237,7 +1248,7 @@ function vAdmin() {
   return h + '<div class="list list-wide">' + (people.length ? people.map(function (u) {
     var st = u.role === 'Админ' ? 'Администратор' : u.status === 'Одобрен' ? (u.level === 'view' ? 'Только просмотр' : u.level === 'none' ? 'Без зала' : u.level === 'clean' ? 'Клининг зала' : 'Бронирование') + (u.clRole === 'cleaner' ? ' · 🧹 исполнитель' : u.clRole === 'admin' ? ' · 🧹 админ' : '') + (u.specialty && u.specialty.length ? ' · ' + u.specialty.join(', ').toLowerCase() : '') : u.status === 'Заявка' ? 'Ждёт одобрения' : u.status === 'Отклонён' ? 'Отклонён' : 'Нет в приложении';
     return '<button class="person" data-a="user" data-v="' + u.uid + '"><div class="avatar">' + esc(initials(u.fio)) + '</div><div class="body">' +
-      '<div class="nm">' + esc(u.fio || u.email) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + (u.nameBad && (u.tg || u.max) ? ' <span class="chip warn" style="font-size:11px;padding:1px 7px;vertical-align:1px">ник</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div class="nm">' + esc(personName(u.fio || u.email)) + (u.isMe ? ' <span class="hint">(вы)</span>' : '') + (u.nameBad && (u.tg || u.max) ? ' <span class="chip warn" style="font-size:11px;padding:1px 7px;vertical-align:1px">уточнить ФИО</span>' : '') + '</div><div class="m">' + esc([u.position, st].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div class="tags"><span class="tag' + (u.tg ? ' on' : '') + '">TG</span><span class="tag' + (u.max ? ' on' : '') + '">MAX</span></div></button>';
   }).join('') : '<div class="card empty">Никого не нашли</div>') + '</div>';
 }
@@ -1422,8 +1433,8 @@ function openForm(pre) {
     '<div class="cl-box" id="f-clbox"' + (pre.cleaning ? '' : ' hidden') + '><div class="row3"><div class="field" style="margin:0"><label for="f-cld">Дата</label><input class="input sm" type="date" id="f-cld"></div>' +
       '<div class="field" style="margin:0"><label for="f-cls">С</label><input class="input sm" type="time" step="300" id="f-cls"></div><div class="field" style="margin:0"><label for="f-cle">До</label><input class="input sm" type="time" step="300" id="f-cle"></div></div>' +
       '<div class="cl-st" id="f-clst"></div></div>' +
-    (me.isAdmin ? '<div class="field"><label for="f-owner">Привязать бронь к сотруднику</label><select class="input" id="f-owner"><option value="">Без привязки</option>' + ownerPeople.map(function (x) { return '<option value="' + esc(x.uid) + '"' + (x.uid === ownerUid ? ' selected' : '') + '>' + esc(x.fio) + '</option>'; }).join('') + '</select><div class="hint small">Сотрудник увидит бронь в своих заявках и получит уведомление об изменениях.</div></div>' : '') +
-    '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(pre.resp || me.short) + '"></div>' +
+    (me.isAdmin ? '<div class="field"><label for="f-owner">Привязать бронь к сотруднику</label><select class="input" id="f-owner"><option value="">Без привязки</option>' + ownerPeople.map(function (x) { return '<option value="' + esc(x.uid) + '"' + (x.uid === ownerUid ? ' selected' : '') + '>' + esc(personName(x.fio)) + '</option>'; }).join('') + '</select><div class="hint small">Сотрудник увидит бронь в своих заявках и получит уведомление об изменениях.</div></div>' : '') +
+    '<div class="field"><label for="f-r">Ответственный</label><input class="input" id="f-r" maxlength="80" value="' + esc(personName(pre.resp || me.short)) + '"></div>' +
     '<div class="field"><label for="f-c">Комментарий <span style="opacity:.7">— необязательно</span></label><textarea class="input" id="f-c" rows="2" maxlength="500" placeholder="Нужен микрофон, проектор…">' + esc(pre.comment || '') + '</textarea></div>' +
     '<button class="btn" type="submit" id="f-go">' + goText + '</button></form>';
   openSheet(h, function (sh) {
@@ -1539,7 +1550,7 @@ function openForm(pre) {
       sel.innerHTML = partSel.map(function (uid) { return '<span class="pp-chip">' + esc(pname(uid)) + '<button type="button" data-prem="' + uid + '" aria-label="Убрать">' + I.x.replace('class="i"', 'class="i s"') + '</button></span>'; }).join('');
       var qv = q('f-pq').value.trim().toLowerCase();
       q('f-pres').innerHTML = !qv ? '' : people.filter(function (x) { return partSel.indexOf(x.uid) < 0 && (x.fio + ' ' + x.position).toLowerCase().indexOf(qv) >= 0; }).slice(0, 6)
-        .map(function (x) { return '<button type="button" data-padd="' + x.uid + '"><span>' + esc(x.fio) + '</span><small>' + esc(x.position || '') + '</small></button>'; }).join('');
+        .map(function (x) { return '<button type="button" data-padd="' + x.uid + '"><span>' + esc(personName(x.fio)) + '</span><small>' + esc(x.position || '') + '</small></button>'; }).join('');
       renderSpecHint();
     };
     sh.addEventListener('click', function (ev) {
@@ -1646,10 +1657,10 @@ function openBooking(row) {
     (b.series ? '<span class="chip mut">' + I.repeat + 'Серия</span>' : '') + (!future && b.status !== 'cancelled' ? '<span class="chip mut">Прошла</span>' : '') +
     (b.overlapApproved ? '<span class="chip ok">Пересечение согласовано</span>' : b.check === 'КОНФЛИКТ' ? '<span class="chip danger">Конфликт в таблице</span>' : '') + '</div>' +
     '<dl class="kv"><dt>Когда</dt><dd>' + humanFull(b.date) + ', ' + esc(b.start) + '–' + esc(b.end) + '</dd>' +
-    (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(b.resp) + '</dd>' : '') +
+    (b.type ? '<dt>Тип</dt><dd>' + esc(b.type) + '</dd>' : '') + (b.resp ? '<dt>Ответственный</dt><dd>' + esc(personName(b.resp)) + '</dd>' : '') +
     (b.neededAs && b.neededAs.length ? '<dt>Вы нужны</dt><dd><b>' + esc(cap(b.neededAs.join(', ').toLowerCase())) + '</b></dd>' : '') +
     (b.specs ? '<dt>Специалисты</dt><dd>' + esc(cap(b.specs)) + '</dd>' : '') +
-    (b.cleaning ? '<dt>Уборка</dt><dd>' + (b.cleaning.set ? '<b>' + esc(clText(b.cleaning.set)) + '</b> — назначено' + (b.cleaning.req ? '<br><span class="hint small">просили ' + esc(clText(b.cleaning.req)) + '</span>' : '') : esc(clText(b.cleaning.req)) + ' — ждёт ответа клининга') + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(b.requester) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
+    (b.cleaning ? '<dt>Уборка</dt><dd>' + (b.cleaning.set ? '<b>' + esc(clText(b.cleaning.set)) + '</b> — назначено' + (b.cleaning.req ? '<br><span class="hint small">просили ' + esc(clText(b.cleaning.req)) + '</span>' : '') : esc(clText(b.cleaning.req)) + ' — ждёт ответа клининга') + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(personName(b.requester)) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
   if (me.isAdmin && b.status === 'pending' && future) {
@@ -1704,7 +1715,7 @@ function openUser(uid) {
   var st = u.status || 'Нет в приложении';
   var lvl = u.status === 'Одобрен' ? u.level || 'book' : '';
   var h = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="avatar" style="width:48px;height:48px;font-size:16px">' + esc(initials(u.fio)) + '</div>' +
-    '<div><h3 style="margin:0">' + esc(u.fio || '—') + '</h3><div class="hint small">' + esc(u.position || '') + '</div></div></div>' +
+    '<div><h3 style="margin:0">' + esc(personName(u.fio || '—')) + '</h3><div class="hint small">' + esc(u.position || '') + '</div></div></div>' +
     '<dl class="kv"><dt>Статус</dt><dd>' + esc(st) + '</dd>' + (lvl ? '<dt>Права</dt><dd>' + esc(LEVELS[lvl]) + '</dd>' : '') +
     '<dt>Telegram</dt><dd>' + esc(u.tg || '—') + '</dd><dt>MAX</dt><dd>' + esc(u.max || '—') + '</dd>' +
     (u.email ? '<dt>Email</dt><dd>' + esc(u.email) + '</dd>' : '') + (u.gaccess ? '<dt>Google-таблица</dt><dd>' + esc(u.gaccess) + '</dd>' : '') +
@@ -1725,7 +1736,7 @@ function openUser(uid) {
       var spl = S.d.settings.specialists || [], cur = u.specialty || [], bossU = u.boss ? findUser(u.boss) : null;
       btns.push('<div class="field" style="margin:8px 0 4px"><label>Специалист в вашей команде</label><div class="opts" id="u-spec">' +
         spl.map(function (x) { return '<button type="button" class="' + (cur.indexOf(x) >= 0 ? 'on' : '') + '" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
-        '<div class="hint small" style="margin:6px 2px 0">' + (cur.length && bossU && !bossU.isMe ? 'Сейчас в команде ' + esc(bossU.fio) + '. ' : '') +
+        '<div class="hint small" style="margin:6px 2px 0">' + (cur.length && bossU && !bossU.isMe ? 'Сейчас в команде ' + esc(personName(bossU.fio)) + '. ' : '') +
         'Сообщение придёт, когда в брони отметят этого специалиста и участником выберут вас. В списке участников подчинённых не видно.</div>' +
         '<button type="button" class="btn sm sec" style="margin-top:8px" data-a="uspec" data-v="' + u.uid + '">Сохранить специализацию</button></div>');
     }
@@ -1962,13 +1973,13 @@ function vClPeople() {
   return '<div class="hint small" style="margin:2px 4px 10px">Роли клининга не меняют права в актовом зале. Новых сотрудников одобряет администратор приложения.</div>' +
     '<div class="field"><input class="input" id="clpq" type="search" placeholder="Поиск по имени" value="' + esc(S.clPq || '') + '"></div>' +
     '<div class="list list-wide">' + list.map(function (p) {
-      return '<button class="person" data-a="clperson" data-v="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(p.fio) + '</div>' +
+      return '<button class="person" data-a="clperson" data-v="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(personName(p.fio)) + '</div>' +
         '<div class="m">' + esc(p.position || '') + '</div></div><span class="chip ' + (p.role === 'admin' ? 'acc' : p.role === 'cleaner' ? 'ok' : p.role === 'none' ? 'mut' : 'mut') + '">' + esc(CL_ROLE_RU[p.role]) + '</span></button>';
     }).join('') + '</div>';
 }
 function openClPerson(uid) {
   var p = (cl().people || []).filter(function (x) { return x.uid === uid; })[0]; if (!p) return;
-  openSheet('<h3>' + esc(p.fio) + '</h3><p class="lead">' + esc(p.position || '') + '</p><div class="field"><label>Роль в клининге</label><div class="opts">' +
+  openSheet('<h3>' + esc(personName(p.fio)) + '</h3><p class="lead">' + esc(p.position || '') + '</p><div class="field"><label>Роль в клининге</label><div class="opts">' +
     ['employee', 'cleaner', 'admin', 'none'].map(function (r) { return '<button type="button" class="' + (p.role === r ? 'on' : '') + '" data-a="clsetrole" data-v="' + p.uid + '" data-r="' + r + '">' + CL_ROLE_RU[r] + '</button>'; }).join('') + '</div>' +
     '<div class="hint small" style="margin:8px 2px 0">Сотрудник — подаёт заявки. Исполнитель — принимает и выполняет. Администратор — видит всё, проверяет, правит карту и выдаёт роли. Нет доступа — раздел скрыт.</div></div>');
 }
@@ -2207,7 +2218,7 @@ function openProfile() {
   var other = P.name === 'tg' ? 'MAX' : 'Telegram';
   var hasOther = P.name === 'tg' ? m.hasMax : m.hasTg;
   var h = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><div class="avatar" style="width:52px;height:52px;font-size:18px">' + esc(initials(m.fio)) + '</div>' +
-    '<div><h3 style="margin:0">' + esc(m.fio) + '</h3><div class="hint small">' + esc(m.position || '') + (m.isAdmin ? ' · администратор' : m.level === 'view' ? ' · только просмотр' : '') + '</div></div></div>' +
+    '<div><h3 style="margin:0">' + esc(personName(m.fio)) + '</h3><div class="hint small">' + esc(m.position || '') + (m.isAdmin ? ' · администратор' : m.level === 'view' ? ' · только просмотр' : '') + '</div></div></div>' +
     '<dl class="kv"><dt>Telegram</dt><dd>' + (m.hasTg ? 'подключён' : '—') + '</dd><dt>MAX</dt><dd>' + (m.hasMax ? 'подключён' : '—') + '</dd>' +
     (m.email ? '<dt>Email</dt><dd>' + esc(m.email) + '</dd>' : '') + '<dt>Ваш ID</dt><dd class="hint">' + esc(platformLabel() + ' ' + idn.id) + '</dd></dl>' +
     '<div class="card mt2" style="background:var(--bg2)" id="p-link"><div style="display:flex;gap:8px;align-items:center;font-weight:600">' + I.link + 'Привязать ' + other + '</div>' +
@@ -2276,7 +2287,7 @@ var A = {
     var id = el.dataset.v, t = clTicket(id);
     var cleaners = (cl().people || []).filter(function (p) { return p.role === 'cleaner' && !t.team.some(function (a) { return a.uid === p.uid; }); });
     openSheet('<h3>Назначить исполнителя</h3><p class="lead">' + esc(t.place) + '</p>' + (cleaners.length ? '<div class="list">' + cleaners.map(function (p) {
-      return '<button class="person" data-a="classign2" data-v="' + id + '" data-u="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(p.fio) + '</div></div></button>';
+      return '<button class="person" data-a="classign2" data-v="' + id + '" data-u="' + p.uid + '"><div class="avatar">' + esc(initials(p.fio)) + '</div><div class="body"><div class="nm">' + esc(personName(p.fio)) + '</div></div></button>';
     }).join('') + '</div>' : '<div class="card empty small">Свободных исполнителей нет. Роль «Исполнитель» выдаётся во вкладке «Люди».</div>'));
   },
   classign2: function (el) { act('clAssign', { id: el.dataset.v, uid: el.dataset.u }).then(function (d) { if (d) refreshTicket(el.dataset.v); }); },
@@ -2415,7 +2426,7 @@ var A = {
   },
   urename: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
-    ask({ title: 'Изменить ФИО', text: 'Сейчас: ' + esc(u.fio) + '. Фамилия и имя русскими буквами, отчество — по желанию.', reason: 'Фамилия Имя Отчество', reasonValue: u.nameBad ? '' : u.fio, ok: 'Сохранить' })
+    ask({ title: 'Изменить ФИО', text: 'Сейчас: ' + esc(personName(u.fio)) + '. Фамилия и имя русскими буквами, отчество — по желанию.', reason: 'Фамилия Имя Отчество', reasonValue: u.nameBad ? '' : u.fio, ok: 'Сохранить' })
       .then(function (r) {
         if (!r) return;
         var v = niceFio(r.reason || ''), pr = fioProblem(v);
@@ -2432,7 +2443,7 @@ var A = {
     if (u.status === 'Одобрен' && (u.level || 'book') === l) return;
     var go = function () { act('setRole', { uid: u.uid, level: l }).then(function (d) { if (d) closeAll(); }); };
     if (l === 'admin' || u.level === 'admin') {
-      ask({ title: l === 'admin' ? 'Сделать администратором?' : 'Снять права администратора?', text: l === 'admin' ? esc(u.fio) + ' сможет подтверждать брони и управлять пользователями.' : esc(u.fio) + ': ' + LEVELS[l].toLowerCase() + '.', ok: l === 'admin' ? 'Сделать администратором' : 'Изменить права' })
+      ask({ title: l === 'admin' ? 'Сделать администратором?' : 'Снять права администратора?', text: l === 'admin' ? esc(personName(u.fio)) + ' сможет подтверждать брони и управлять пользователями.' : esc(personName(u.fio)) + ': ' + LEVELS[l].toLowerCase() + '.', ok: l === 'admin' ? 'Сделать администратором' : 'Изменить права' })
         .then(function (r) { if (r) go(); });
     } else go();
   },
@@ -2452,23 +2463,23 @@ var A = {
   },
   ublock: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
-    ask({ title: 'Закрыть доступ?', text: esc(u.fio) + ' больше не сможет открыть приложение. Брони останутся в таблице. Вернуть доступ можно здесь же, выбрав права.', ok: 'Закрыть доступ', danger: true })
+    ask({ title: 'Закрыть доступ?', text: esc(personName(u.fio)) + ' больше не сможет открыть приложение. Брони останутся в таблице. Вернуть доступ можно здесь же, выбрав права.', ok: 'Закрыть доступ', danger: true })
       .then(function (r) { if (r) act('rejectUser', { uid: u.uid }).then(function (d) { if (d) closeAll(); }); });
   },
   ureject: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
-    ask({ title: 'Отклонить заявку?', text: esc(u.fio) + ' не получит доступ к расписанию.', ok: 'Отклонить', danger: true })
+    ask({ title: 'Отклонить заявку?', text: esc(personName(u.fio)) + ' не получит доступ к расписанию.', ok: 'Отклонить', danger: true })
       .then(function (r) { if (r) act('rejectUser', { uid: u.uid }); });
   },
   urole: function (el) {
     var on = el.dataset.on === '1', u = findUser(el.dataset.v); if (!u) return;
-    ask({ title: on ? 'Сделать администратором?' : 'Снять права администратора?', text: on ? esc(u.fio) + ' сможет подтверждать брони и управлять пользователями.' : '', ok: on ? 'Сделать администратором' : 'Снять права' })
+    ask({ title: on ? 'Сделать администратором?' : 'Снять права администратора?', text: on ? esc(personName(u.fio)) + ' сможет подтверждать брони и управлять пользователями.' : '', ok: on ? 'Сделать администратором' : 'Снять права' })
       .then(function (r) { if (r) act('setRole', { uid: u.uid, admin: on }).then(function (d) { if (d) closeAll(); }); });
   },
   udelete: function (el) {
     var u = findUser(el.dataset.v); if (!u) return;
     var hasG = !!u.email && /выдан/i.test(u.gaccess || '') && !/не выдан/i.test(u.gaccess || '');
-    ask({ title: 'Удалить пользователя?', text: esc(u.fio) + ' будет удалён(а) из таблицы «Доступы» и потеряет доступ к приложению. Его брони останутся в расписании.',
+    ask({ title: 'Удалить пользователя?', text: esc(personName(u.fio)) + ' будет удалён(а) из таблицы «Доступы» и потеряет доступ к приложению. Его брони останутся в расписании.',
       check: u.email ? { label: 'Также закрыть доступ к Google-таблице для ' + esc(u.email), on: hasG } : null, ok: 'Удалить', danger: true })
       .then(function (r) { if (r) act('deleteUser', { uid: u.uid, revoke: r.checked }).then(function (d) { if (d) closeAll(); }); });
   },
