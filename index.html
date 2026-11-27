@@ -986,7 +986,7 @@ function vCleaning() {
     return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>' + esc(humanFull(b.date)) + ', ' + esc(b.start + '–' + b.end) + '</b>' + slotChip(b) + '</div>' +
       (b.comment ? '<div class="hint small" style="margin:6px 0 0">💬 ' + esc(b.comment) + '</div>' : '') +
       '<div class="actions" style="margin-top:10px">' + (b.slot.state === 'wait' ? '<button class="btn sm" data-a="slotok" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>' : '') +
-      (live ? '<button class="btn sm" data-a="finish" data-v="' + b.row + '">✅ Закончили раньше</button>' : b.slot.fixed && !S.d.me.canOverlap ? '' : '<button class="btn sm sec" data-a="slotset" data-v="' + b.row + '">' + (b.slot.state === 'wait' ? 'Другое время' : 'Изменить время') + '</button>') + '</div></div>';
+      (live ? '<button class="btn sm" data-a="finish" data-v="' + b.row + '">✅ Закончили раньше</button>' : b.slot.fixed && !S.d.me.canOverlap ? '' : '<button class="btn sm sec" data-a="slotset" data-v="' + b.row + '">' + (b.slot.state === 'wait' ? 'Другое время' : 'Изменить время') + '</button>') + cancelHallCleaningButton(b, true) + '</div></div>';
   };
   var card = function (b) {
     var c = b.cleaning;
@@ -995,7 +995,7 @@ function vCleaning() {
       '<dl class="kv" style="margin:8px 0"><dt>Просят</dt><dd>' + esc(clText(c.req)) + '</dd>' + (c.set ? '<dt>Назначено</dt><dd><b>' + esc(clText(c.set)) + '</b></dd>' : '') +
       '<dt>Зал занят</dt><dd>' + esc(shortDate(b.date) + ', ' + b.start + '–' + b.end) + '</dd></dl>' +
       '<div class="actions">' + (!c.set ? '<button class="btn sm" data-a="clok" data-v="' + b.row + '">' + I.check + 'Подходит</button>' : '') +
-      '<button class="btn sm sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время' : 'Другое время') + '</button></div></div>';
+      '<button class="btn sm sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время' : 'Другое время') + '</button>' + cancelHallCleaningButton(b, true) + '</div></div>';
   };
   return '<div class="hint small" style="margin:2px 2px 12px">Названия мероприятий и кто бронировал — скрыты. Назначенное время сразу уйдёт автору брони.</div>' +
     (slots.length ? '<div class="sec-t">Вызовы администратора</div>' + slots.map(slotCard).join('') : '') +
@@ -1012,6 +1012,15 @@ function mskNow() {
 }
 function isToday(b) { return b.date === S.d.settings.today; }
 function running(b) { var n = mskNow(); return isToday(b) && b.status === 'confirmed' && n >= toMin(b.start) && n < toMin(b.end); }
+function canCancelHallCleaning(b) {
+  var me = S.d.me;
+  if (!b || !b.cancelSig || (!me.isCleaner && !me.isAdmin) || b.status === 'cancelled' || (b.slot && b.slot.state === 'done')) return false;
+  var c = b.slot ? b : b.cleaning && (b.cleaning.set || b.cleaning.req);
+  return !!c && (c.date > S.d.settings.today || (c.date === S.d.settings.today && toMin(c.end) > mskNow()));
+}
+function cancelHallCleaningButton(b, small) {
+  return canCancelHallCleaning(b) ? '<button class="btn danger' + (small ? ' sm' : '') + '" data-a="hallcleancancel" data-v="' + b.row + '">Отменить уборку</button>' : '';
+}
 function slotChip(b) {
   var s = b.slot || {};
   return s.state === 'done' ? '<span class="chip mut">🧹 Закончили в ' + esc(s.at) + '</span>' : s.fixed ? '<span class="chip ok">🧹 Уборка согласована</span>' : s.state === 'ok' ? '<span class="chip ok">🧹 Клининг подтвердил</span>' : '<span class="chip warn">🧹 Ждёт клининга</span>';
@@ -1081,7 +1090,7 @@ function openSlot(b) {
       if (!live) btns.push('<button class="btn sec" data-a="slotset" data-v="' + b.row + '">' + (sl.state === 'wait' ? 'Предложить другое время' : 'Изменить время') + '</button>');
     }
     if (live && (me.isCleaner || me.isAdmin)) btns.push('<button class="btn" data-a="finish" data-v="' + b.row + '">✅ Закончили раньше — открыть зал</button>');
-    if (me.isAdmin && future) btns.push('<button class="btn danger" data-a="cancel" data-v="' + b.row + '">Отменить уборку</button>');
+    if (canCancelHallCleaning(b)) btns.push(cancelHallCleaningButton(b));
   }
   if (btns.length) h += '<div class="sheet-actions">' + btns.join('') + '</div>';
   openSheet(h);
@@ -1332,8 +1341,13 @@ function ask(o) {
     bd.onclick = function () { fin(null); };
     $('#ask-no', dlg).onclick = function () { fin(null); };
     $('#ask-ok', dlg).onclick = function () {
+      if (o.reasonRequired && $('#ask-r', dlg).value.trim().length < 3) return;
       fin({ reason: o.reason ? $('#ask-r', dlg).value.trim() : '', checked: o.check ? $('#ask-c', dlg).checked : false });
     };
+    if (o.reasonRequired) {
+      var validateReason = function () { $('#ask-ok', dlg).disabled = $('#ask-r', dlg).value.trim().length < 3; };
+      $('#ask-r', dlg).addEventListener('input', validateReason); validateReason();
+    }
     setBack(function () { fin(null); });
   });
 }
@@ -1646,7 +1660,7 @@ function openBooking(row) {
     openSheet('<h3>Зал занят</h3><dl class="kv" style="margin:10px 0 16px"><dt>Когда</dt><dd>' + esc(humanFull(b.date) + ', ' + b.start + '–' + b.end) + '</dd>' +
       (c ? '<dt>Уборку просят</dt><dd>' + esc(clText(c.req)) + '</dd>' + (c.set ? '<dt>Назначено</dt><dd><b>' + esc(clText(c.set)) + '</b></dd>' : '') : '<dt>Уборка</dt><dd>не заказана</dd>') + '</dl>' +
       (c && c.req ? '<div class="sheet-actions">' + (!c.set ? '<button class="btn" data-a="clok" data-v="' + b.row + '">Подходит: ' + esc(c.req.start + '–' + c.req.end) + '</button>' : '') +
-        '<button class="btn sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время уборки' : 'Назначить другое время') + '</button></div>' : ''));
+        '<button class="btn sec" data-a="clset" data-v="' + b.row + '">' + (c.set ? 'Изменить время уборки' : 'Назначить другое время') + '</button>' + cancelHallCleaningButton(b) + '</div>' : ''));
     return;
   }
   var me = S.d.me, st = S.d.settings, future = b.date >= st.today;
@@ -1698,6 +1712,7 @@ function openBooking(row) {
   }
   if (b.status !== 'cancelled' && future && (me.isAdmin || (b.mine && mayBook()))) {
     btns.push('<button class="btn sec" data-a="clreq" data-v="' + b.row + '">🧹 ' + (b.cleaning ? 'Изменить уборку' : 'Вызвать уборку') + '</button>');
+    if (canCancelHallCleaning(b)) btns.push(cancelHallCleaningButton(b));
   }
   if (me.isAdmin && b.status !== 'cancelled' && b.cleaning && future) {
     if (!b.cleaning.set) btns.push('<button class="btn sec" data-a="clok" data-v="' + b.row + '">🧹 Подтвердить уборку</button>');
@@ -2410,6 +2425,12 @@ var A = {
     actWithOverlap('setCleaning', { row: b.row, csig: cleaningSignature(b), accept: true }, busy.length > 0).then(function (d) { if (d) closeAll(); });
   },
   clset: function (el) { closeAll(); openCleanForm(el.dataset.v); },
+  hallcleancancel: function (el) {
+    var b = findBooking(el.dataset.v); if (!canCancelHallCleaning(b)) return;
+    var c = b.slot ? b : b.cleaning.set || b.cleaning.req;
+    ask({ title: 'Отменить уборку?', text: esc(humanFull(c.date) + ', ' + c.start + '–' + c.end) + '. ' + (b.slot ? 'Слот уборки будет отменён.' : 'Отменится только уборка; бронь мероприятия сохранится.') + ' Заказчик и ответственный получат сообщение.', reason: 'Причина отмены или с кем согласовано (обязательно)', reasonRequired: true, ok: 'Отменить уборку', danger: true })
+      .then(function (r) { if (r) act('cancelCleaning', { row: b.row, csig: cleaningSignature(b), cancelSig: b.cancelSig, reason: r.reason }).then(function (d) { if (d) closeAll(); }); });
+  },
   clreq: function (el) { closeAll(); openCleanRequest(el.dataset.v); },
   slotnew: function () { openSlotForm(null); },
   slotok: function (el) { var b = findBooking(el.dataset.v); if (b) act('slotAnswer', { row: b.row, csig: cleaningSignature(b), accept: true }).then(function (d) { if (d) closeAll(); }); },
