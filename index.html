@@ -1652,6 +1652,41 @@ function openForm(pre) {
 }
 
 /* --- карточка брони --- */
+function openEventNote(row) {
+  var b = findBooking(row); if (!b || !S.d.me.canOverlap || b.slot || b.status === 'cancelled') return;
+  var n = b.eventNote || {}, before = !!n.before, after = !!n.after || !n.before;
+  var h = '<h3>Комментарий ответственному</h3><p class="lead">' + esc(b.title) + '<br>' + esc(humanFull(b.date) + ', ' + b.start + '–' + b.end) + '</p>' +
+    '<div class="field"><label for="en-who">Кому отправить</label><select class="input" id="en-who"><option value="">Ответственному за мероприятие' + (n.responsible ? ' — ' + esc(n.responsible) : ' (выберите человека, если не определён)') + '</option>' +
+    (S.d.people || []).map(function (p) { return '<option value="' + esc(p.uid) + '"' + (p.uid === n.uid ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select></div>' +
+    '<label class="check"><input type="checkbox" id="en-before-on"' + (before ? ' checked' : '') + '><span>Отправить до начала</span></label>' +
+    '<div id="en-before-box"' + (before ? '' : ' hidden') + '><div class="field"><label for="en-lead">Когда</label><select class="input" id="en-lead">' +
+    [[5, 'За 5 минут'], [10, 'За 10 минут'], [15, 'За 15 минут'], [30, 'За 30 минут'], [60, 'За час'], [120, 'За 2 часа'], [1440, 'За сутки']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === (n.lead || 15) ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label for="en-before">Что сделать до мероприятия</label><textarea class="input" id="en-before" rows="3" maxlength="1000" placeholder="Например: подготовьте стулья и проверьте микрофоны">' + esc(n.before || '') + '</textarea>' +
+    (n.beforeSent ? '<p class="hint small">Уже отправлено. Изменение текста не вызовет повторную отправку тому же человеку.</p>' : '') + '</div></div>' +
+    '<label class="check"><input type="checkbox" id="en-after-on"' + (after ? ' checked' : '') + '><span>Отправить после окончания</span></label>' +
+    '<div class="field" id="en-after-box"' + (after ? '' : ' hidden') + '><label for="en-after">Что сделать после мероприятия</label><textarea class="input" id="en-after" rows="3" maxlength="1000" placeholder="Например: верните стулья на место и выключите оборудование">' + esc(n.after || '') + '</textarea>' +
+    (n.afterSent ? '<p class="hint small">Уже отправлено. Изменение текста не вызовет повторную отправку тому же человеку.</p>' : '') + '</div>' +
+    '<p class="hint small">Сообщение придёт в бот в течение 5 минут от выбранного времени. После переноса брони время отправки изменится автоматически. При отмене мероприятия сообщения не отправляются.</p>' +
+    '<div class="sheet-actions"><button class="btn" id="en-save">Сохранить</button><button class="btn ghost" id="en-clear">Отключить комментарии</button></div>';
+  openSheet(h, function (sh) {
+    var q = function (s) { return sh.querySelector(s); };
+    q('#en-before-on').addEventListener('change', function () { q('#en-before-box').hidden = !this.checked; });
+    q('#en-after-on').addEventListener('change', function () { q('#en-after-box').hidden = !this.checked; });
+    var save = function (clear) {
+      var bt = !clear && q('#en-before-on').checked ? q('#en-before').value.trim() : '';
+      var at = !clear && q('#en-after-on').checked ? q('#en-after').value.trim() : '';
+      if (!clear && ((q('#en-before-on').checked && !bt) || (q('#en-after-on').checked && !at))) { toast('Напишите текст выбранного комментария', 'error'); return; }
+      q('#en-save').disabled = true; q('#en-clear').disabled = true;
+      act('setEventNote', { row: b.row, sig: b.sig, rev: n.rev || '', uid: clear ? '' : q('#en-who').value, lead: +q('#en-lead').value, before: bt, after: at }).then(function (d) {
+        q('#en-save').disabled = false; q('#en-clear').disabled = false;
+        if (d) { closeAll(); openBooking(b.row); }
+      });
+    };
+    q('#en-save').addEventListener('click', function () { save(false); });
+    q('#en-clear').addEventListener('click', function () { save(true); });
+  });
+}
+
 function openBooking(row) {
   var b = findBooking(row); if (!b) return;
   if (b.slot) { openSlot(b); return; }
@@ -1677,6 +1712,7 @@ function openBooking(row) {
     (b.cleaning ? '<dt>Уборка</dt><dd>' + (b.cleaning.set ? '<b>' + esc(clText(b.cleaning.set)) + '</b> — назначено' + (b.cleaning.req ? '<br><span class="hint small">просили ' + esc(clText(b.cleaning.req)) + '</span>' : '') : esc(clText(b.cleaning.req)) + ' — ждёт ответа клининга') + '</dd>' : '') + (b.participants && b.participants.length ? '<dt>Участники</dt><dd>' + esc(b.participants.map(function (p) { return p.name; }).join(', ')) + '</dd>' : '') + (b.requester ? '<dt>Заявитель</dt><dd>' + esc(personName(b.requester)) + '</dd>' : '') + (b.comment ? '<dt>Комментарий</dt><dd>' + esc(b.comment) + '</dd>' : '') +
     (ser.length > 1 ? '<dt>Даты серии</dt><dd>' + esc(ser.slice(0, 8).map(function (x) { return shortDate(x.date) + ' ' + x.start; }).join(', ')) + (ser.length > 8 ? ' и ещё ' + (ser.length - 8) : '') + '</dd>' : '') + '</dl>';
   var btns = [];
+  if (me.canOverlap && b.status !== 'cancelled' && future) btns.push('<button class="btn sec" data-a="eventnote" data-v="' + b.row + '">💬 Комментарий ответственному</button>');
   if (me.isAdmin && b.status === 'pending' && future) {
     btns.push('<button class="btn" data-a="confirm" data-v="' + b.row + '">' + I.check + 'Подтвердить</button>');
     if (serPending.length > 1) btns.push('<button class="btn sec" data-a="confirmseries" data-v="' + esc(b.series) + '">Подтвердить всю серию (' + serPending.length + ')</button>');
@@ -2376,6 +2412,7 @@ var A = {
     closeAll();
     openForm({ edit: b, date: b.date, s: toMin(b.start), e: toMin(b.end), exact: true, title: b.title, type: b.type, resp: b.resp, comment: b.comment, specs: b.specs, participants: b.participants, cleaning: b.cleaning });
   },
+  eventnote: function (el) { openEventNote(el.dataset.v); },
   user: function (el) { openUser(el.dataset.v); },
   confirm: function (el) {
     var b = findBooking(el.dataset.v); if (!b) return;
